@@ -35,6 +35,9 @@ jobs:
                 run: echo "APP_ID=${{ github.event.inputs.app_id || 'com.google.android.packageinstaller' }}" >> $GITHUB_ENV
 
             -   name: Build
+                env:
+                    GITHUB_ACTOR: ${{ github.actor }}
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 run: |
                     chmod +x ./gradlew
                     ./gradlew assembleStableRelease -PAPP_ID="$APP_ID" --stacktrace
