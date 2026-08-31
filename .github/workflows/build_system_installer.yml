@@ -1,0 +1,66 @@
+name: Build System Installer APK
+
+on:
+    workflow_dispatch:
+        inputs:
+            app_id:
+                description: 'applicationId to build with'
+                required: true
+                default: 'com.google.android.packageinstaller'
+    push:
+        branches:
+            - system-installer
+
+jobs:
+    build:
+        name: Build Stable Release with custom APP_ID
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v5
+                with:
+                    fetch-depth: 0   # versionCode comes from git commit count
+
+            -   name: Set up JDK 21
+                uses: actions/setup-java@v5
+                with:
+                    java-version: '21'
+                    distribution: 'temurin'
+
+            -   name: Set up Gradle
+                uses: gradle/actions/setup-gradle@v4
+
+            -   name: Resolve APP_ID
+                run: echo "APP_ID=${{ github.event.inputs.app_id || 'com.google.android.packageinstaller' }}" >> $GITHUB_ENV
+
+            -   name: Build
+                run: |
+                    chmod +x ./gradlew
+                    ./gradlew assembleStableRelease -PAPP_ID="$APP_ID" --stacktrace
+
+            -   name: Locate APK
+                run: |
+                    APK=$(find app/build/outputs/apk -name '*.apk' | head -1)
+                    echo "APK=$APK" >> $GITHUB_ENV
+                    ls -lh "$APK"
+
+            -   name: Dump merged manifest facts
+                run: |
+                    AAPT2=$(find "$ANDROID_SDK_ROOT/build-tools" -name aapt2 | sort -V | tail -1)
+                    echo "=== package / sharedUserId ==="
+                    "$AAPT2" dump badging "$APK" | grep -E "^package|sharedUserId" || true
+                    echo
+                    echo "=== ALL declared permissions (merged manifest) ==="
+                    "$AAPT2" dump permissions "$APK"
+                    echo
+                    echo "=== install/uninstall intent actions still present ==="
+                    "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" \
+                      | grep -E 'INSTALL_PACKAGE|UNINSTALL_PACKAGE|package-archive' || echo "(none)"
+
+            -   name: Upload APK
+                uses: actions/upload-artifact@v4
+                with:
+                    name: system-installer-apk
+                    path: app/build/outputs/apk/**/*.apk
+                    if-no-files-found: error
