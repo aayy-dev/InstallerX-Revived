@@ -630,6 +630,7 @@ class InstallerSelectionTest {
             labShizukuNonAdbInstall = false,
             labEnableAbiOverride = false,
             labTryDifferentArchitecture = false,
+            labRootInstallAsSystemUid = false,
             enableFileLogging = false,
             themeMode = com.rosan.installer.domain.settings.model.preferences.theme.ThemeMode.entries.first(),
             useAmoled = false,

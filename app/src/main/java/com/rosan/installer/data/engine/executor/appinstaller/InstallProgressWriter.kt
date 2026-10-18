@@ -87,6 +87,18 @@ internal class InstallProgressWriter(
         report(completedBytes, force = true)
     }
 
+    /** Bytes completed so far. Pass it to [rewindTo] before writing the same entries again. */
+    fun checkpoint(): Long = completedBytes
+
+    /**
+     * Rewinds completed bytes to an earlier [checkpoint] so a retried session can write the same
+     * entries again without exceeding [totalBytes].
+     */
+    fun rewindTo(checkpoint: Long) {
+        require(checkpoint in 0L..completedBytes) { "Invalid progress checkpoint: $checkpoint" }
+        completedBytes = checkpoint
+    }
+
     private fun shouldReport(bytesWritten: Long): Boolean {
         if (bytesWritten - lastReportedBytes < reportStep) return false
         return nanoTime() - lastReportTime >= MIN_REPORT_INTERVAL_NANOS

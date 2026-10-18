@@ -92,6 +92,7 @@ enum class BooleanSetting {
     LabShizukuNonAdbInstall,
     LabEnableAbiOverride,
     LabTryDifferentArchitecture,
+    LabRootInstallAsSystemUid,
     DetectXposedModule,
     QuickOpenLSPosed,
     EnableFileLogging,

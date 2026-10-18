@@ -152,6 +152,7 @@ class AppSettingsRepositoryImpl(
             labShizukuNonAdbInstall = prefs[AppDataStore.LAB_SHIZUKU_NON_ADB_INSTALL] ?: false,
             labEnableAbiOverride = prefs[AppDataStore.LAB_ENABLE_ABI_OVERRIDE] ?: false,
             labTryDifferentArchitecture = prefs[AppDataStore.LAB_TRY_DIFFERENT_ARCHITECTURE] ?: false,
+            labRootInstallAsSystemUid = prefs[AppDataStore.LAB_ROOT_INSTALL_AS_SYSTEM_UID] ?: false,
             enableFileLogging = prefs[AppDataStore.ENABLE_FILE_LOGGING] ?: true,
             // UI State
             themeMode = ThemeMode.fromValueOrDefault(prefs[AppDataStore.THEME_MODE] ?: ThemeMode.SYSTEM.name),
@@ -365,6 +366,8 @@ class AppSettingsRepositoryImpl(
         BooleanSetting.LabEnableAbiOverride -> AppDataStore.LAB_ENABLE_ABI_OVERRIDE
 
         BooleanSetting.LabTryDifferentArchitecture -> AppDataStore.LAB_TRY_DIFFERENT_ARCHITECTURE
+
+        BooleanSetting.LabRootInstallAsSystemUid -> AppDataStore.LAB_ROOT_INSTALL_AS_SYSTEM_UID
 
         BooleanSetting.DetectXposedModule -> AppDataStore.DETECT_XPOSED_MODULE
 
