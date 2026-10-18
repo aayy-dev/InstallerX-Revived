@@ -15,6 +15,9 @@ public interface IPackageInstaller extends IInterface {
 
     void setPermissionsResult(int sessionId, boolean accepted) throws RemoteException;
 
+    // Android 14+. Callable by system, root or shell; consumed by the next createSession call.
+    void disableVerificationForUid(int uid) throws RemoteException;
+
     abstract class Stub extends Binder implements IPackageInstaller {
         public static IPackageInstaller asInterface(IBinder obj) {
             throw new UnsupportedOperationException();

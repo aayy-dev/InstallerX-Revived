@@ -9,6 +9,7 @@ sealed interface LabSettingsAction {
     data class LabChangeRootModuleFlash(val enable: Boolean) : LabSettingsAction
     data class LabChangeRootShowModuleArt(val enable: Boolean) : LabSettingsAction
     data class LabChangeRootImplementation(val implementation: RootMode) : LabSettingsAction
+    data class LabChangeRootInstallAsSystemUid(val enable: Boolean) : LabSettingsAction
     data class LabChangeAllowInstallWithoutUserAction(val enable: Boolean) : LabSettingsAction
     data class LabChangeRespectPlatformInstallPolicy(val enable: Boolean) : LabSettingsAction
     data class LabChangeEnableAbiOverride(val enable: Boolean) : LabSettingsAction

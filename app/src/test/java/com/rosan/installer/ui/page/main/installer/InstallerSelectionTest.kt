@@ -628,6 +628,7 @@ class InstallerSelectionTest {
             labRespectPlatformInstallPolicy = false,
             labEnableAbiOverride = false,
             labTryDifferentArchitecture = false,
+            labRootInstallAsSystemUid = false,
             enableFileLogging = false,
             themeMode = com.rosan.installer.domain.settings.model.preferences.theme.ThemeMode.entries.first(),
             paletteStyle = com.rosan.installer.domain.settings.model.preferences.theme.PaletteStyle.entries.first(),

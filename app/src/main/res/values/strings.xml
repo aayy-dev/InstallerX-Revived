@@ -967,6 +967,9 @@
     <string name="lab_enable_abi_override_desc">Try installing native libraries within the same architecture family. Requires system support</string>
     <string name="lab_try_different_architecture">Other architectures</string>
     <string name="lab_try_different_architecture_desc">Also try installing native libraries from other architecture families</string>
+    <string name="lab_root_install_as_system_uid">Install as system UID</string>
+    <string name="lab_root_install_as_system_uid_partial_user_failure">Installed, but could not add the app for %1$d other user(s). See logs for details</string>
+    <string name="lab_root_install_as_system_uid_desc">Run Root installs as su 1000 so the selected installer is also recorded as the install initiator instead of com.android.shell. Android ignores \"Install request from ADB\" in this mode, and \"Disable Verification\" needs Android 14+. Some ROMs, such as Xiaomi\'s, may reject the install</string>
     <string name="lab_show_apk_path">Show file path</string>
     <string name="lab_show_apk_path_label">File path</string>
     <string name="lab_show_apk_path_desc">Display the file path in app details</string>
