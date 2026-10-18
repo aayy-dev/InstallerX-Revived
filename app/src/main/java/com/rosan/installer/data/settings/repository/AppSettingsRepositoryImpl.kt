@@ -73,6 +73,7 @@ class AppSettingsRepositoryImpl(
             sdkCompareInMultiLine = prefs[AppDataStore.DIALOG_SDK_COMPARE_MULTI_LINE] ?: false,
             showOPPOSpecial = prefs[AppDataStore.DIALOG_SHOW_OPPO_SPECIAL] ?: false,
             checkAppSignature = prefs[AppDataStore.CHECK_APP_SIGNATURE] ?: true,
+            checkSourceStamp = prefs[AppDataStore.CHECK_SOURCE_STAMP] ?: true,
             checkSplitPackageSignatures = prefs[AppDataStore.CHECK_SPLIT_PACKAGE_SIGNATURES] ?: false,
             showSignatureInfoOnMatch = prefs[AppDataStore.SHOW_SIGNATURE_INFO_ON_MATCH] ?: false,
             showSignatureDetails = prefs[AppDataStore.SHOW_SIGNATURE_DETAILS] ?: false,
@@ -146,6 +147,8 @@ class AppSettingsRepositoryImpl(
             labRespectPlatformInstallPolicy =
                 AppConfig.isRespectPlatformInstallPolicyAvailable &&
                     (prefs[AppDataStore.LAB_RESPECT_PLATFORM_INSTALL_POLICY] ?: false),
+            labEnableAbiOverride = prefs[AppDataStore.LAB_ENABLE_ABI_OVERRIDE] ?: false,
+            labTryDifferentArchitecture = prefs[AppDataStore.LAB_TRY_DIFFERENT_ARCHITECTURE] ?: false,
             enableFileLogging = prefs[AppDataStore.ENABLE_FILE_LOGGING] ?: true,
             // UI State
             themeMode = ThemeMode.fromValueOrDefault(prefs[AppDataStore.THEME_MODE] ?: ThemeMode.SYSTEM.name),
@@ -157,6 +160,7 @@ class AppSettingsRepositoryImpl(
             useMiuixMonet = prefs[AppDataStore.UI_USE_MIUIX_MONET] ?: false,
             useAppleFloatingBar = prefs[AppDataStore.UI_USE_APPLE_FLOATING_BAR] ?: false,
             seedColorInt = prefs[AppDataStore.THEME_SEED_COLOR] ?: DEFAULT_SEED_COLOR,
+            wallpaperSeedColorInt = prefs[AppDataStore.THEME_WALLPAPER_SEED_COLOR] ?: 0,
             useDynColorFollowPkgIcon = prefs[AppDataStore.UI_DYN_COLOR_FOLLOW_PKG_ICON] ?: false,
             useDynColorFollowPkgIconForLiveActivity = prefs[AppDataStore.LIVE_ACTIVITY_DYN_COLOR_FOLLOW_PKG_ICON] ?: false,
             useBlur = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -233,6 +237,7 @@ class AppSettingsRepositoryImpl(
 
     private fun intKey(setting: IntSetting): Preferences.Key<Int> = when (setting) {
         IntSetting.ThemeSeedColor -> AppDataStore.THEME_SEED_COLOR
+        IntSetting.ThemeWallpaperSeedColor -> AppDataStore.THEME_WALLPAPER_SEED_COLOR
         IntSetting.ShowMiIslandBlockingInterval -> AppDataStore.SHOW_MI_ISLAND_BLOCKING_INTERVAL_MS
         IntSetting.NotificationSuccessAutoClearSeconds -> AppDataStore.NOTIFICATION_SUCCESS_AUTO_CLEAR_SECONDS
         IntSetting.CloseSessionCountdown -> AppDataStore.CLOSE_SESSION_COUNTDOWN
@@ -313,6 +318,8 @@ class AppSettingsRepositoryImpl(
 
         BooleanSetting.CheckAppSignature -> AppDataStore.CHECK_APP_SIGNATURE
 
+        BooleanSetting.CheckSourceStamp -> AppDataStore.CHECK_SOURCE_STAMP
+
         BooleanSetting.CheckSplitPackageSignatures -> AppDataStore.CHECK_SPLIT_PACKAGE_SIGNATURES
 
         BooleanSetting.ShowSignatureInfoOnMatch -> AppDataStore.SHOW_SIGNATURE_INFO_ON_MATCH
@@ -343,6 +350,10 @@ class AppSettingsRepositoryImpl(
 
         BooleanSetting.LabRespectPlatformInstallPolicy -> AppDataStore.LAB_RESPECT_PLATFORM_INSTALL_POLICY
 
+        BooleanSetting.LabEnableAbiOverride -> AppDataStore.LAB_ENABLE_ABI_OVERRIDE
+
+        BooleanSetting.LabTryDifferentArchitecture -> AppDataStore.LAB_TRY_DIFFERENT_ARCHITECTURE
+
         BooleanSetting.DetectXposedModule -> AppDataStore.DETECT_XPOSED_MODULE
 
         BooleanSetting.QuickOpenLSPosed -> AppDataStore.QUICK_OPEN_LSPOSED
@@ -361,6 +372,6 @@ class AppSettingsRepositoryImpl(
     }
 
     private companion object {
-        private const val DEFAULT_SEED_COLOR = 0xFF6750A4.toInt()
+        private const val DEFAULT_SEED_COLOR = 0xFF4A672D.toInt()
     }
 }

@@ -27,6 +27,7 @@ enum class StringSetting {
 
 enum class IntSetting {
     ThemeSeedColor,
+    ThemeWallpaperSeedColor,
     ShowMiIslandBlockingInterval,
     NotificationSuccessAutoClearSeconds,
     CloseSessionCountdown,
@@ -69,6 +70,7 @@ enum class BooleanSetting {
     DialogDisableNotificationOnDismiss,
     DialogShowOppoSpecial,
     CheckAppSignature,
+    CheckSourceStamp,
     CheckSplitPackageSignatures,
     ShowSignatureInfoOnMatch,
     ShowSignatureDetails,
@@ -84,6 +86,8 @@ enum class BooleanSetting {
     LabShowInstallInitiator,
     LabInstallWithoutUserAction,
     LabRespectPlatformInstallPolicy,
+    LabEnableAbiOverride,
+    LabTryDifferentArchitecture,
     DetectXposedModule,
     QuickOpenLSPosed,
     EnableFileLogging,

@@ -38,6 +38,18 @@ data class InstallNoticeResources(
     val labelSignatureLineageCertificate: String,
     val labelSignatureCurrentMarker: String,
     val labelSignatureSha256: String,
+    val labelSignatureSourceStampSha256: String,
+    val labelSignatureSourceStamp: String,
+    val labelSignatureSourceStampStatus: String,
+    val textSourceStampUnverified: String,
+    val textSourceStampVerified: String,
+    val textSourceStampFailed: String,
+    val textSourceStampCertificateMismatch: String,
+    val textSourceStampVerificationError: String,
+    val labelSignatureSourceStampTimestamp: String,
+    val labelSignatureSourceStampCertificate: String,
+    val labelSignatureSourceStampLineage: String,
+    val labelSignatureInformation: String,
     val labelSignatureSha1: String,
     val labelSignatureSubject: String,
     val labelSignatureIssuer: String,
@@ -50,6 +62,8 @@ data class InstallNoticeResources(
     val labelSignatureNoCertificates: String,
     val tagSdk: String,
     val textSdkIncompatible: String,
+    val tagOplusOsdk: String,
+    val textOplusOsdkIncompatible: String,
     val tagArch32: String,
     val textArch32: String,
     val tagEmulated: String,
@@ -65,7 +79,13 @@ data class InstallNoticeResources(
     val errorColor: Color,
     val tertiaryColor: Color,
     val primaryColor: Color,
+    val labelSignatureHybridClassical: String = "",
+    val labelSignatureHybridPqc: String = "",
 )
 
 // Return type containing the list and the button ID
-data class InstallStateResult(val notices: List<NoticeModel>, val buttonTextId: Int)
+data class InstallStateResult(
+    val notices: List<NoticeModel>,
+    val buttonTextId: Int,
+    val isOplusOsdkIncompatible: Boolean,
+)

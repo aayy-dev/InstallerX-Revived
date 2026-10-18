@@ -8,29 +8,29 @@
 # https://mvnrepository.com/
 
 [versions]
-agp = "9.4.0"
+agp = "9.4.1"
 biometric = "1.4.0-alpha07"
 focusApi = "1.4"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 kotlinxCoroutines = "1.11.0"
 ksp = "2.3.12"
 composeBom = "2026.09.00"
 compose = "1.12.1"
 splashScreen = "1.2.0"
-material3 = "1.5.0-alpha28"
+material3 = "1.5.0-beta01"
 room = "3.0.3"
 ktx-serialization = "1.11.0"
 rikka-shizuku = "13.1.5"
 koin-bom = "4.2.2"
 datastore = "1.2.1"
-aboutLibraries = "15.2.0"
+aboutLibraries = "15.3.0"
 appiconloader = "1.5.0"
-androidx-annotation = "1.10.0"
+androidx-annotation = "1.11.0"
 timber = "5.0.1"
-miuix = "0.9.4-103b737b-SNAPSHOT"
+miuix = "0.9.4-292d8ec6-SNAPSHOT"
 okhttp = "5.5.0"
 monetcompat = "0.4.1"
-materialKolor = "5.0.1"
+materialKolor = "6.0.0"
 lifecycle = "2.11.0"
 junit = "1.3.0"
 espressoCore = "3.7.0"
@@ -39,9 +39,10 @@ benchmarkMacroJunit4 = "1.5.0"
 baselineprofile = "1.5.0"
 profileinstaller = "1.4.1"
 commonsCompress = "1.28.0"
-spotless = "8.10.2"
+xz = "1.12"
+spotless = "8.10.4"
 ktlint = "1.8.0"
-composeKtlintRules = "0.6.6"
+composeKtlintRules = "0.6.8"
 
 [plugins]
 installerx-application = { id = "installerx.android.application" }
@@ -69,7 +70,7 @@ kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "androidx-annotation" }
-androidx-core = { group = "androidx.core", name = "core-ktx", version = "1.19.0" }
+androidx-core = { group = "androidx.core", name = "core-ktx", version = "1.19.1" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.13.0" }
 androidx-lifecycle = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
@@ -96,9 +97,10 @@ room-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref
 ktx-serializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "ktx-serialization" }
 # AndroidHiddenApiBypass
 # https://github.com/LSPosed/AndroidHiddenApiBypass
-hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version = "6.1" }
+hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version = "6.2" }
 commons-cli = { group = "commons-cli", name = "commons-cli", version = "1.11.0" }
 commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commonsCompress" }
+xz = { module = "org.tukaani:xz", version.ref = "xz" }
 
 # Koin Inject
 # https://insert-koin.io/docs/setup/koin
@@ -146,7 +148,7 @@ okhttp-bom = { module = "com.squareup.okhttp3:okhttp-bom", version.ref = "okhttp
 monetcompat = { module = "com.github.KieronQuinn:MonetCompat", version.ref = "monetcompat" }
 androidx-palette = { group = "androidx.palette", name = "palette", version = "1.0.0" }
 
-materialKolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
+materialKolor = { module = "com.materialkolor:material-kolor-material3", version.ref = "materialKolor" }
 
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
 import com.rosan.installer.core.device.model.Manufacturer
 import com.rosan.installer.core.env.DeviceConfig
+import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
 import com.rosan.installer.domain.engine.model.packageinfo.AppEntity
 import com.rosan.installer.domain.engine.model.packageinfo.sortedBest
 import com.rosan.installer.domain.engine.model.source.DataType
@@ -196,6 +197,18 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
     val labelSignatureLineageCertificate = stringResource(R.string.installer_signature_lineage_certificate)
     val labelSignatureCurrentMarker = stringResource(R.string.installer_signature_current_marker)
     val labelSignatureSha256 = stringResource(R.string.installer_signature_sha256)
+    val labelSignatureSourceStampSha256 = stringResource(R.string.installer_signature_source_stamp_sha256)
+    val labelSignatureSourceStamp = stringResource(R.string.installer_signature_source_stamp)
+    val labelSignatureSourceStampStatus = stringResource(R.string.installer_signature_source_stamp_status)
+    val textSourceStampUnverified = stringResource(R.string.installer_signature_source_stamp_unverified)
+    val textSourceStampVerified = stringResource(R.string.installer_signature_source_stamp_verified)
+    val textSourceStampFailed = stringResource(R.string.installer_signature_source_stamp_failed)
+    val textSourceStampCertificateMismatch = stringResource(R.string.installer_signature_source_stamp_certificate_mismatch)
+    val textSourceStampVerificationError = stringResource(R.string.installer_signature_source_stamp_verification_error)
+    val labelSignatureSourceStampTimestamp = stringResource(R.string.installer_signature_source_stamp_timestamp)
+    val labelSignatureSourceStampCertificate = stringResource(R.string.installer_signature_source_stamp_certificate)
+    val labelSignatureSourceStampLineage = stringResource(R.string.installer_signature_source_stamp_lineage)
+    val labelSignatureInformation = stringResource(R.string.installer_signature_information)
     val labelSignatureSha1 = stringResource(R.string.installer_signature_sha1)
     val labelSignatureSubject = stringResource(R.string.installer_signature_subject)
     val labelSignatureIssuer = stringResource(R.string.installer_signature_issuer)
@@ -208,6 +221,8 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
     val labelSignatureNoCertificates = stringResource(R.string.installer_signature_no_certificates)
     val tagSdk = stringResource(R.string.tag_sdk)
     val sdkIncompatibleWarning = stringResource(R.string.installer_prepare_sdk_incompatible)
+    val tagOplusOsdk = stringResource(R.string.tag_oplus_osdk)
+    val oplusOsdkIncompatibleWarning = stringResource(R.string.installer_prepare_oplus_osdk_incompatible)
     val tagArch32 = stringResource(R.string.tag_arch_32)
     val textArch32 = stringResource(R.string.installer_prepare_arch_32_notice)
     val tagEmulated = stringResource(R.string.tag_arch_emulated)
@@ -217,6 +232,9 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
     val tagXposed = stringResource(R.string.tag_xposed)
     val labelXposedMinApi = stringResource(R.string.installer_xposed_min_api)
     val labelXposedTargetApi = stringResource(R.string.installer_xposed_target_api)
+
+    val labelSignatureHybridClassical = stringResource(R.string.installer_signature_hybrid_classical)
+    val labelSignatureHybridPqc = stringResource(R.string.installer_signature_hybrid_pqc)
 
     val installResources = remember(primaryColor, errorColor, tertiaryColor) {
         InstallNoticeResources(
@@ -249,7 +267,21 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
             labelSignatureCertificateLineage = labelSignatureCertificateLineage,
             labelSignatureLineageCertificate = labelSignatureLineageCertificate,
             labelSignatureCurrentMarker = labelSignatureCurrentMarker,
+            labelSignatureHybridClassical = labelSignatureHybridClassical,
+            labelSignatureHybridPqc = labelSignatureHybridPqc,
             labelSignatureSha256 = labelSignatureSha256,
+            labelSignatureSourceStampSha256 = labelSignatureSourceStampSha256,
+            labelSignatureSourceStamp = labelSignatureSourceStamp,
+            labelSignatureSourceStampStatus = labelSignatureSourceStampStatus,
+            textSourceStampUnverified = textSourceStampUnverified,
+            textSourceStampVerified = textSourceStampVerified,
+            textSourceStampFailed = textSourceStampFailed,
+            textSourceStampCertificateMismatch = textSourceStampCertificateMismatch,
+            textSourceStampVerificationError = textSourceStampVerificationError,
+            labelSignatureSourceStampTimestamp = labelSignatureSourceStampTimestamp,
+            labelSignatureSourceStampCertificate = labelSignatureSourceStampCertificate,
+            labelSignatureSourceStampLineage = labelSignatureSourceStampLineage,
+            labelSignatureInformation = labelSignatureInformation,
             labelSignatureSha1 = labelSignatureSha1,
             labelSignatureSubject = labelSignatureSubject,
             labelSignatureIssuer = labelSignatureIssuer,
@@ -262,6 +294,8 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
             labelSignatureNoCertificates = labelSignatureNoCertificates,
             tagSdk = tagSdk,
             textSdkIncompatible = sdkIncompatibleWarning,
+            tagOplusOsdk = tagOplusOsdk,
+            textOplusOsdkIncompatible = oplusOsdkIncompatibleWarning,
             tagArch32 = tagArch32,
             textArch32 = textArch32,
             tagEmulated = tagEmulated,
@@ -279,6 +313,13 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
 
     // Inject the pure domain use case
     val analyzeInstallStateUseCase = koinInject<AnalyzeInstallStateUseCase>()
+    val deviceCapabilityProvider = koinInject<DeviceCapabilityProvider>()
+    val checkOplusOsdk = settings.showOPPOSpecial &&
+        (
+            DeviceConfig.currentManufacturer == Manufacturer.OPPO ||
+                DeviceConfig.currentManufacturer == Manufacturer.ONEPLUS
+            )
+    val deviceOplusOsdkVersion = if (checkOplusOsdk) deviceCapabilityProvider.oplusOSdkVersion else null
 
     // Instantiate the UI mapper with the required Compose resources
     val installStateUiMapper = remember(installResources) {
@@ -296,6 +337,8 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
         settings.showSignatureInfoOnMatch,
         settings.showSignatureDetails,
         settings.detectXposedModule,
+        checkOplusOsdk,
+        deviceOplusOsdkVersion,
         installStateUiMapper,
     ) {
         // 1. Get pure domain state
@@ -307,6 +350,8 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
             containerType = containerType,
             systemArch = DeviceConfig.currentArchitecture,
             systemSdkInt = Build.VERSION.SDK_INT,
+            checkOplusOsdk = checkOplusOsdk,
+            deviceOplusOsdkVersion = deviceOplusOsdkVersion,
             checkAppSignature = checkAppSignature,
             showSignatureInfoOnMatch = settings.showSignatureInfoOnMatch,
             showSignatureDetails = settings.showSignatureDetails,
@@ -449,7 +494,8 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
                     currentPackage.installedAppInfo != null
                 } ?: false
 
-                val canInstall = canInstallBaseEntity || canInstallModuleEntity || canInstallSplitEntity
+                val canInstall = !installStateResult.isOplusOsdkIncompatible &&
+                    (canInstallBaseEntity || canInstallModuleEntity || canInstallSplitEntity)
 
                 // only when the entity is a split APK, XAPK, or APKM
                 if (canInstall && settings.showExtendedMenu && isAPK) {
