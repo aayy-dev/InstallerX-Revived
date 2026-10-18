@@ -22,6 +22,7 @@ class LabSettingsViewModel(appSettingsRepo: AppSettingsRepository, private val u
             labRootEnableModuleFlash = prefs.labRootEnableModuleFlash,
             labRootShowModuleArt = prefs.labRootShowModuleArt,
             labRootMode = prefs.labRootMode,
+            labRootInstallAsSystemUid = prefs.labRootInstallAsSystemUid,
             labAllowInstallWithoutUserAction = prefs.labInstallWithoutUserAction,
             labRespectPlatformInstallPolicy = prefs.labRespectPlatformInstallPolicy,
             labEnableAbiOverride = prefs.labEnableAbiOverride,
@@ -55,6 +56,13 @@ class LabSettingsViewModel(appSettingsRepo: AppSettingsRepository, private val u
                 updateSetting(
                     StringSetting.LabRootImplementation,
                     action.implementation.name,
+                )
+            }
+
+            is LabSettingsAction.LabChangeRootInstallAsSystemUid -> viewModelScope.launch {
+                updateSetting(
+                    BooleanSetting.LabRootInstallAsSystemUid,
+                    action.enable,
                 )
             }
 

@@ -18,4 +18,7 @@ object PackageInstallerUtil : KoinComponent {
     var PackageInstaller.SessionParams.abiOverride: String?
         get() = reflect.getValue(this, "abiOverride")
         set(value) = reflect.setFieldValue(this, "abiOverride", PackageInstaller.SessionParams::class.java, value)
+
+    val PackageInstaller.SessionParams.installReason: Int
+        get() = reflect.getValue(this, "installReason") ?: 0
 }

@@ -9,6 +9,7 @@ data class LabSettingsState(
     val labRootEnableModuleFlash: Boolean = false,
     val labRootShowModuleArt: Boolean = true,
     val labRootMode: RootMode = RootMode.Magisk,
+    val labRootInstallAsSystemUid: Boolean = false,
     val labAllowInstallWithoutUserAction: Boolean = false,
     val labRespectPlatformInstallPolicy: Boolean = false,
     val labEnableAbiOverride: Boolean = false,

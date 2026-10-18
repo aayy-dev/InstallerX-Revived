@@ -61,7 +61,7 @@ abstract class IBinderAppInstallerRepoImpl(
     protected val reflect: ReflectionProvider,
     protected val capabilityProvider: DeviceCapabilityProvider,
     protected val postInstallTaskProvider: PostInstallTaskProvider,
-    private val appSettingsRepo: AppSettingsRepository,
+    protected val appSettingsRepo: AppSettingsRepository,
 ) : AppInstallerRepository {
     private companion object {
         const val INSTALL_FLAGS_TAG = "InstallFlags"
@@ -71,11 +71,39 @@ abstract class IBinderAppInstallerRepoImpl(
 
     protected abstract suspend fun iBinderWrapper(iBinder: IBinder): IBinder
 
-    private suspend fun resolvePackageInstallerBinder(): IPackageInstaller {
-        val packageManager =
-            IPackageManager.Stub.asInterface(iBinderWrapper(ServiceManager.getService("package")))
+    protected suspend fun resolvePackageManagerBinder(): IPackageManager = IPackageManager.Stub.asInterface(iBinderWrapper(ServiceManager.getService("package")))
+
+    protected suspend fun resolvePackageInstallerBinder(): IPackageInstaller {
+        val packageManager = resolvePackageManagerBinder()
         return IPackageInstaller.Stub.asInterface(iBinderWrapper(packageManager.packageInstaller.asBinder()))
     }
+
+    /**
+     * Called right before the platform session is created, through the same binder path as the
+     * session itself.
+     */
+    protected open suspend fun beforeCreateSession(params: PackageInstaller.SessionParams) = Unit
+
+    /**
+     * Called after one package's session has been committed successfully. Must not throw: the
+     * package is already installed at this point.
+     */
+    protected open suspend fun onPackageCommitted(
+        config: ConfigModel,
+        packageName: String,
+        params: PackageInstaller.SessionParams,
+        userId: Int,
+    ) = Unit
+
+    /**
+     * Runs the session work for one package. Subclasses can override this to retry the same
+     * package through a different privilege path.
+     */
+    protected open suspend fun runPackageSession(block: suspend () -> Unit) = block()
+
+    private data class CreatedSession(val id: Int, val session: Session, val params: PackageInstaller.SessionParams)
+
+    private fun resolveTargetUserId(config: ConfigModel): Int = if (config.enableCustomizeUser) config.targetUserId else AndroidProcess.myUid() / 100000
 
     override suspend fun resolveInstallerPackageName(config: ConfigModel): String = when (config.authorizer) {
         Authorizer.Dhizuku -> getDhizukuComponentName()
@@ -99,7 +127,7 @@ abstract class IBinderAppInstallerRepoImpl(
         val packageInstaller = resolvePackageInstallerBinder()
 
         // Resolve the target user ID based on config
-        val finalUserId = if (config.enableCustomizeUser) config.targetUserId else AndroidProcess.myUid() / 100000
+        val finalUserId = resolveTargetUserId(config)
 
         val callerPackageName = resolvePackageInstallerCallerPackageName(config)
 
@@ -279,34 +307,41 @@ abstract class IBinderAppInstallerRepoImpl(
         }
 
         if (entities.isEmpty()) return
-        val packageInstaller = getPackageInstaller(config)
-        var session: Session? = null
-        var platformSessionId: Int? = null
-        try {
-            val createdSession = createSession(
-                config,
-                entities,
-                metadata,
-                respectPlatformInstallPolicy,
-                enableAbiOverride,
-                tryDifferentArchitecture,
-                packageInstaller,
-                packageName,
-            )
-            session = createdSession.second
-            platformSessionId = createdSession.first
-            metadata.onPlatformSessionActiveChanged(createdSession.first, true)
-            installIts(entities, session, progressWriter)
-            onPhaseChanged(InstallPhase.INSTALLING)
-            commit(session)
-        } catch (e: Exception) {
-            session?.abandon()
-            throw e
-        } finally {
-            session?.runCatching { close() }
-            platformSessionId?.let { sessionId ->
-                metadata.onPlatformSessionActiveChanged(sessionId, false)
+        val progressCheckpoint = progressWriter?.checkpoint()
+        runPackageSession {
+            // A retried session writes this package's entries again.
+            if (progressWriter != null && progressCheckpoint != null) progressWriter.rewindTo(progressCheckpoint)
+            val packageInstaller = getPackageInstaller(config)
+            var session: Session? = null
+            var platformSessionId: Int? = null
+            val committedParams = try {
+                val createdSession = createSession(
+                    config,
+                    entities,
+                    metadata,
+                    respectPlatformInstallPolicy,
+                    enableAbiOverride,
+                    tryDifferentArchitecture,
+                    packageInstaller,
+                    packageName,
+                )
+                session = createdSession.session
+                platformSessionId = createdSession.id
+                metadata.onPlatformSessionActiveChanged(createdSession.id, true)
+                installIts(entities, createdSession.session, progressWriter)
+                onPhaseChanged(InstallPhase.INSTALLING)
+                commit(createdSession.session)
+                createdSession.params
+            } catch (e: Exception) {
+                session?.abandon()
+                throw e
+            } finally {
+                session?.runCatching { close() }
+                platformSessionId?.let { sessionId ->
+                    metadata.onPlatformSessionActiveChanged(sessionId, false)
+                }
             }
+            onPackageCommitted(config, packageName, committedParams, resolveTargetUserId(config))
         }
     }
 
@@ -319,7 +354,7 @@ abstract class IBinderAppInstallerRepoImpl(
         tryDifferentArchitecture: Boolean,
         packageInstaller: PackageInstaller,
         packageName: String,
-    ): Pair<Int, Session> {
+    ): CreatedSession {
         val pm = context.packageManager
         val sourceType = entities.first().sourceType
         val params = if (sourceType == DataType.MULTI_APK_ZIP || sourceType == DataType.MULTI_APK) {
@@ -390,10 +425,11 @@ abstract class IBinderAppInstallerRepoImpl(
         }
         // --- abiOverride End ---
 
+        beforeCreateSession(params)
         val sessionId = packageInstaller.createSession(params)
         val session = packageInstaller.openSession(sessionId)
         setSessionIBinder(session)
-        return sessionId to session
+        return CreatedSession(sessionId, session, params)
     }
 
     private suspend fun installIts(entities: List<InstallEntity>, session: Session, progressWriter: InstallProgressWriter?) {

@@ -76,6 +76,7 @@ data class AppPreferences(
     val labRespectPlatformInstallPolicy: Boolean,
     val labEnableAbiOverride: Boolean,
     val labTryDifferentArchitecture: Boolean,
+    val labRootInstallAsSystemUid: Boolean,
     val enableFileLogging: Boolean,
     // Theme Settings
     val themeMode: ThemeMode,

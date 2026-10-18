@@ -189,6 +189,14 @@ fun MiuixLabPage(useBlur: Boolean, viewModel: LabSettingsViewModel = koinViewMod
                         .padding(bottom = 12.dp),
                 ) {
                     MiuixSwitchWidget(
+                        title = stringResource(R.string.lab_root_install_as_system_uid),
+                        description = stringResource(R.string.lab_root_install_as_system_uid_desc),
+                        checked = uiState.labRootInstallAsSystemUid,
+                        onCheckedChange = {
+                            viewModel.dispatch(LabSettingsAction.LabChangeRootInstallAsSystemUid(it))
+                        },
+                    )
+                    MiuixSwitchWidget(
                         title = stringResource(R.string.lab_module_flashing),
                         description = stringResource(R.string.lab_module_flashing_desc),
                         checked = uiState.labRootEnableModuleFlash,

@@ -53,6 +53,29 @@ class InstallProgressWriterTest {
     }
 
     @Test
+    fun `rewinding to a checkpoint allows the same entry to be written again`() = runTest {
+        val first = ByteArray(16) { it.toByte() }
+        val second = ByteArray(8) { (it + 16).toByte() }
+        val writer = InstallProgressWriter(totalBytes = first.size.toLong() + second.size, onProgress = {})
+        writer.start()
+        writer.copy(ByteArrayInputStream(first), ByteArrayOutputStream(), first.size.toLong())
+
+        val checkpoint = writer.checkpoint()
+        writer.copy(ByteArrayInputStream(second), ByteArrayOutputStream(), second.size.toLong())
+        assertFailsWith<IllegalArgumentException> {
+            writer.copy(ByteArrayInputStream(second), ByteArrayOutputStream(), second.size.toLong())
+        }
+
+        writer.rewindTo(checkpoint)
+        val retryOutput = ByteArrayOutputStream()
+        writer.copy(ByteArrayInputStream(second), retryOutput, second.size.toLong())
+
+        assertContentEquals(second, retryOutput.toByteArray())
+        assertEquals((first.size + second.size).toLong(), writer.checkpoint())
+        assertFailsWith<IllegalArgumentException> { writer.rewindTo(writer.checkpoint() + 1) }
+    }
+
+    @Test
     fun `rejects a truncated install source`() = runTest {
         val writer = InstallProgressWriter(totalBytes = 10L, onProgress = {})
         writer.start()

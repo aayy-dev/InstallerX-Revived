@@ -944,6 +944,9 @@
     <string name="lab_enable_abi_override_desc">尝试安装同系列架构的二进制库，需系统支持</string>
     <string name="lab_try_different_architecture">跨架构</string>
     <string name="lab_try_different_architecture_desc">同时尝试安装其他架构系列的二进制库</string>
+    <string name="lab_root_install_as_system_uid">以系统 UID 安装</string>
+    <string name="lab_root_install_as_system_uid_partial_user_failure">已安装，但未能为 %1$d 个其他用户添加此应用，详情请查看日志</string>
+    <string name="lab_root_install_as_system_uid_desc">以 su 1000 执行 Root 安装，使所选安装者同时被记录为安装发起方，而非 com.android.shell。此模式下系统会忽略“来自 ADB 的安装请求”，“禁用验证”需要 Android 14 及以上。部分 ROM（如小米）可能拒绝安装</string>
     <string name="lab_show_apk_path">显示文件路径</string>
     <string name="lab_show_apk_path_label">文件路径</string>
     <string name="lab_show_apk_path_desc">在应用详情中显示文件路径</string>

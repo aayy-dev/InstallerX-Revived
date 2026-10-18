@@ -187,6 +187,17 @@ fun LabPage(useBlur: Boolean, viewModel: LabSettingsViewModel = koinViewModel())
                 ) {
                     item {
                         SwitchWidget(
+                            icon = AppIcons.InstallSource,
+                            title = stringResource(R.string.lab_root_install_as_system_uid),
+                            description = stringResource(R.string.lab_root_install_as_system_uid_desc),
+                            checked = uiState.labRootInstallAsSystemUid,
+                            onCheckedChange = {
+                                viewModel.dispatch(LabSettingsAction.LabChangeRootInstallAsSystemUid(it))
+                            },
+                        )
+                    }
+                    item {
+                        SwitchWidget(
                             icon = AppIcons.Root,
                             title = stringResource(R.string.lab_module_flashing),
                             description = stringResource(R.string.lab_module_flashing_desc),

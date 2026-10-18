@@ -25,6 +25,7 @@ import com.rosan.installer.domain.packageupdate.repository.SelfUpdateRecoveryRep
 import com.rosan.installer.domain.privileged.exception.PrivilegedException
 import com.rosan.installer.domain.privileged.model.PrivilegedErrorType
 import com.rosan.installer.domain.privileged.provider.PostInstallTaskProvider
+import com.rosan.installer.domain.privileged.provider.SystemInfoProvider
 import com.rosan.installer.domain.settings.model.config.Authorizer
 import com.rosan.installer.domain.settings.model.config.ConfigModel
 import com.rosan.installer.domain.settings.repository.AppSettingsRepository
@@ -42,6 +43,7 @@ class AppInstallerRepositoryImpl(
     private val postInstallTaskProvider: PostInstallTaskProvider,
     private val platformInstallPolicyChecker: PlatformInstallPolicyChecker,
     private val selfUpdateRecoveryRepository: SelfUpdateRecoveryRepository,
+    private val systemInfoProvider: SystemInfoProvider,
 ) : AppInstallerRepository {
     override suspend fun resolveInstallerPackageName(config: ConfigModel): String? = executeWithRepo(config) { repo ->
         repo.resolveInstallerPackageName(config)
@@ -246,6 +248,13 @@ class AppInstallerRepositoryImpl(
             }
         }
 
-        else -> ProcessAppInstallerRepoImpl(context, reflect, deviceCapabilityProvider, postInstallTaskProvider, appSettingsRepo)
+        else -> ProcessAppInstallerRepoImpl(
+            context,
+            reflect,
+            deviceCapabilityProvider,
+            postInstallTaskProvider,
+            appSettingsRepo,
+            systemInfoProvider,
+        )
     }
 }

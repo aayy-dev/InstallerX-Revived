@@ -189,6 +189,8 @@ class AppDataStore(private val dataStore: DataStore<Preferences>, private val js
             register(booleanPreferencesKey("lab_enable_abi_override"), PreferenceValueType.BOOLEAN)
         val LAB_TRY_DIFFERENT_ARCHITECTURE =
             register(booleanPreferencesKey("lab_try_different_architecture"), PreferenceValueType.BOOLEAN)
+        val LAB_ROOT_INSTALL_AS_SYSTEM_UID =
+            register(booleanPreferencesKey("lab_root_install_as_system_uid"), PreferenceValueType.BOOLEAN)
 
         // Network
         val ALLOW_INTERNET_ACCESS = register(booleanPreferencesKey("allow_internet_access"), PreferenceValueType.BOOLEAN)
