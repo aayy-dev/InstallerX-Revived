@@ -6,7 +6,7 @@ on:
             app_id:
                 description: 'applicationId to build with'
                 required: true
-                default: 'com.google.android.packageinstaller'
+                default: 'com.android.packageinstaller'
     push:
         branches:
             - system-installer
@@ -32,7 +32,7 @@ jobs:
                 uses: gradle/actions/setup-gradle@v4
 
             -   name: Resolve APP_ID
-                run: echo "APP_ID=${{ github.event.inputs.app_id || 'com.google.android.packageinstaller' }}" >> $GITHUB_ENV
+                run: echo "APP_ID=${{ github.event.inputs.app_id || 'com.android.packageinstaller' }}" >> $GITHUB_ENV
 
             -   name: Build
                 env:
