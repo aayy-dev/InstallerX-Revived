@@ -38,14 +38,17 @@ import com.rosan.installer.R
 import com.rosan.installer.domain.settings.model.config.NetworkSourceMode
 import com.rosan.installer.domain.settings.model.preferences.GithubUpdateChannel
 import com.rosan.installer.domain.settings.model.preferences.HttpProfile
+import com.rosan.installer.domain.settings.model.preferences.NetworkAppNameSource
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.settings.preferred.network.NetworkSettingsAction
 import com.rosan.installer.ui.page.main.settings.preferred.network.NetworkSettingsViewModel
-import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixBackButton
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixBackdropSurface
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixSpinnerPreference
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixTopAppBar
 import com.rosan.installer.ui.page.miuix.widgets.MiuixCustomGithubProxyUrlDialog
 import com.rosan.installer.ui.page.miuix.widgets.MiuixGithubUpdateChannelSelectionDialog
-import com.rosan.installer.ui.theme.getMiuixAppBarColor
-import com.rosan.installer.ui.theme.installerMiuixBlurEffect
+import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
 import com.rosan.installer.ui.theme.rememberMiuixBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -57,10 +60,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowDialog
@@ -140,129 +140,146 @@ fun MiuixNetworkPage(useBlur: Boolean, viewModel: NetworkSettingsViewModel = koi
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                modifier = Modifier.installerMiuixBlurEffect(topBarBackdrop),
-                color = topBarBackdrop.getMiuixAppBarColor(),
+            InstallerMiuixTopAppBar(
+                backdrop = topBarBackdrop,
                 title = stringResource(R.string.network_settings),
                 navigationIcon = {
-                    MiuixBackButton(onClick = { navigator.pop() })
+                    InstallerMiuixBackButton(onClick = { navigator.pop() })
                 },
                 scrollBehavior = scrollBehavior,
             )
         },
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(topBarBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier)
-                .scrollEndHaptic()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            contentPadding = PaddingValues(
-                start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
-                top = paddingValues.calculateTopPadding(),
-                end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
-            ),
-            overscrollEffect = null,
+        InstallerMiuixBackdropSurface(
+            backdrop = topBarBackdrop,
+            modifier = Modifier.fillMaxSize(),
         ) {
-            item { Spacer(modifier = Modifier.size(12.dp)) }
-            item {
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
-                ) {
-                    SwitchPreference(
-                        checked = uiState.allowInternetAccess,
-                        onCheckedChange = { enabled ->
-                            if (!enabled) {
-                                exitAfterInternetDisable = true
-                            }
-                            viewModel.dispatch(
-                                NetworkSettingsAction.ChangeInternetAccess(enabled),
-                            )
-                        },
-                        title = stringResource(R.string.network_access),
-                    )
-                }
-            }
-            item { Spacer(modifier = Modifier.size(12.dp)) }
-            if (uiState.allowInternetAccess) {
-                item { SmallTitle(stringResource(R.string.internet_access_enabled)) }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scrollEndHaptic()
+                    .overScrollVertical()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                contentPadding = PaddingValues(
+                    start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+                    top = paddingValues.calculateTopPadding(),
+                    end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                ),
+                overscrollEffect = null,
+            ) {
+                item { Spacer(modifier = Modifier.size(12.dp)) }
                 item {
                     Card(
                         modifier = Modifier
                             .padding(horizontal = 12.dp)
                             .padding(bottom = 12.dp),
                     ) {
-                        MiuixNetworkSourceModePreference(
-                            currentMode = uiState.networkSourceMode,
-                            onModeChange = { mode ->
-                                if (mode != NetworkSourceMode.Cache &&
-                                    !uiState.networkSourceModeWarningAcknowledged
-                                ) {
-                                    pendingNetworkSourceMode = mode
-                                } else {
-                                    viewModel.dispatch(
-                                        NetworkSettingsAction.ChangeNetworkSourceMode(mode),
-                                    )
+                        SwitchPreference(
+                            checked = uiState.allowInternetAccess,
+                            onCheckedChange = { enabled ->
+                                if (!enabled) {
+                                    exitAfterInternetDisable = true
                                 }
+                                viewModel.dispatch(
+                                    NetworkSettingsAction.ChangeInternetAccess(enabled),
+                                )
                             },
-                        )
-                        val allowSecureString = stringResource(R.string.lab_http_profile_secure)
-                        val allowLocalString = stringResource(R.string.lab_http_profile_local)
-                        val allowAllString = stringResource(R.string.lab_http_profile_all)
-                        val profileData = remember(
-                            allowSecureString,
-                            allowLocalString,
-                            allowAllString,
-                        ) {
-                            linkedMapOf(
-                                HttpProfile.ALLOW_SECURE to allowSecureString,
-                                HttpProfile.ALLOW_LOCAL to allowLocalString,
-                                HttpProfile.ALLOW_ALL to allowAllString,
-                            )
-                        }
-                        val profileEntries = remember(profileData) {
-                            profileData.values.map { name -> DropdownItem(title = name) }
-                        }
-                        val profileIndex = profileData.keys.toList()
-                            .indexOf(uiState.httpProfile)
-                            .coerceAtLeast(0)
-
-                        WindowSpinnerPreference(
-                            title = stringResource(R.string.lab_http_profile),
-                            items = profileEntries,
-                            selectedIndex = profileIndex,
-                            onSelectedIndexChange = { newIndex ->
-                                profileData.keys.elementAtOrNull(newIndex)?.let { profile ->
-                                    viewModel.dispatch(NetworkSettingsAction.ChangeHttpProfile(profile))
-                                }
-                            },
-                        )
-
-                        val channelSummary = when (uiState.githubUpdateChannel) {
-                            GithubUpdateChannel.OFFICIAL -> stringResource(
-                                R.string.lab_update_github_proxy_official,
-                            )
-
-                            GithubUpdateChannel.PROXY_7ED -> stringResource(
-                                R.string.lab_update_github_proxy_7ed,
-                            )
-
-                            GithubUpdateChannel.CUSTOM -> uiState.customGithubProxyUrl.ifBlank {
-                                stringResource(R.string.lab_update_github_proxy_custom)
-                            }
-                        }
-                        BasicComponent(
-                            title = stringResource(R.string.lab_update_github_proxy),
-                            summary = channelSummary,
-                            onClick = { showChannelDialog.value = true },
+                            title = stringResource(R.string.network_access),
                         )
                     }
                 }
+                item { Spacer(modifier = Modifier.size(12.dp)) }
+                if (uiState.allowInternetAccess) {
+                    item { SmallTitle(stringResource(R.string.internet_access_enabled)) }
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp)
+                                .padding(bottom = 12.dp),
+                        ) {
+                            MiuixNetworkSourceModePreference(
+                                currentMode = uiState.networkSourceMode,
+                                onModeChange = { mode ->
+                                    if (mode != NetworkSourceMode.Cache &&
+                                        !uiState.networkSourceModeWarningAcknowledged
+                                    ) {
+                                        pendingNetworkSourceMode = mode
+                                    } else {
+                                        viewModel.dispatch(
+                                            NetworkSettingsAction.ChangeNetworkSourceMode(mode),
+                                        )
+                                    }
+                                },
+                            )
+                            if (uiState.networkSourceMode == NetworkSourceMode.Automatic) {
+                                MiuixNetworkAppNameSourcePreference(
+                                    source = uiState.networkAppNameSource,
+                                    onChange = { viewModel.dispatch(NetworkSettingsAction.ChangeAppNameSource(it)) },
+                                )
+                                MiuixSwitchWidget(
+                                    title = stringResource(R.string.network_load_app_icon),
+                                    description = stringResource(R.string.network_load_app_icon_desc),
+                                    checked = uiState.networkLoadAppIcon,
+                                    onCheckedChange = {
+                                        viewModel.dispatch(NetworkSettingsAction.ChangeLoadAppIcon(it))
+                                    },
+                                )
+                            }
+                            val allowSecureString = stringResource(R.string.lab_http_profile_secure)
+                            val allowLocalString = stringResource(R.string.lab_http_profile_local)
+                            val allowAllString = stringResource(R.string.lab_http_profile_all)
+                            val profileData = remember(
+                                allowSecureString,
+                                allowLocalString,
+                                allowAllString,
+                            ) {
+                                linkedMapOf(
+                                    HttpProfile.ALLOW_SECURE to allowSecureString,
+                                    HttpProfile.ALLOW_LOCAL to allowLocalString,
+                                    HttpProfile.ALLOW_ALL to allowAllString,
+                                )
+                            }
+                            val profileEntries = remember(profileData) {
+                                profileData.values.map { name -> DropdownItem(title = name) }
+                            }
+                            val profileIndex = profileData.keys.toList()
+                                .indexOf(uiState.httpProfile)
+                                .coerceAtLeast(0)
+
+                            InstallerMiuixSpinnerPreference(
+                                title = stringResource(R.string.lab_http_profile),
+                                items = profileEntries,
+                                selectedIndex = profileIndex,
+                                onSelectedIndexChange = { newIndex ->
+                                    profileData.keys.elementAtOrNull(newIndex)?.let { profile ->
+                                        viewModel.dispatch(NetworkSettingsAction.ChangeHttpProfile(profile))
+                                    }
+                                },
+                            )
+
+                            val channelSummary = when (uiState.githubUpdateChannel) {
+                                GithubUpdateChannel.OFFICIAL -> stringResource(
+                                    R.string.lab_update_github_proxy_official,
+                                )
+
+                                GithubUpdateChannel.PROXY_7ED -> stringResource(
+                                    R.string.lab_update_github_proxy_7ed,
+                                )
+
+                                GithubUpdateChannel.CUSTOM -> uiState.customGithubProxyUrl.ifBlank {
+                                    stringResource(R.string.lab_update_github_proxy_custom)
+                                }
+                            }
+                            BasicComponent(
+                                title = stringResource(R.string.lab_update_github_proxy),
+                                summary = channelSummary,
+                                onClick = { showChannelDialog.value = true },
+                            )
+                        }
+                    }
+                }
+                item { Spacer(Modifier.navigationBarsPadding()) }
             }
-            item { Spacer(Modifier.navigationBarsPadding()) }
         }
     }
 }
@@ -304,20 +321,36 @@ private fun NetworkSourceModeWarningDialog(
 }
 
 @Composable
+private fun MiuixNetworkAppNameSourcePreference(source: NetworkAppNameSource, onChange: (NetworkAppNameSource) -> Unit) {
+    InstallerMiuixSpinnerPreference(
+        title = stringResource(R.string.network_app_name_source),
+        summary = stringResource(
+            if (source == NetworkAppNameSource.ServerFilename) R.string.network_app_name_server_desc else R.string.network_app_name_resources_desc,
+        ),
+        items = listOf(
+            DropdownItem(title = stringResource(R.string.network_app_name_server)),
+            DropdownItem(title = stringResource(R.string.network_app_name_resources)),
+        ),
+        selectedIndex = NetworkAppNameSource.entries.indexOf(source),
+        onSelectedIndexChange = { NetworkAppNameSource.entries.getOrNull(it)?.let(onChange) },
+    )
+}
+
+@Composable
 private fun MiuixNetworkSourceModePreference(currentMode: NetworkSourceMode, onModeChange: (NetworkSourceMode) -> Unit) {
     val modes = linkedMapOf(
         NetworkSourceMode.Cache to stringResource(R.string.config_network_source_cache),
-        NetworkSourceMode.Smart to stringResource(R.string.config_network_source_smart),
-        NetworkSourceMode.LowStorage to stringResource(R.string.config_network_source_low_storage),
+        NetworkSourceMode.Automatic to stringResource(R.string.config_network_source_smart),
+        NetworkSourceMode.StreamOnly to stringResource(R.string.config_network_source_low_storage),
     )
     val descriptions = mapOf(
         NetworkSourceMode.Cache to stringResource(R.string.config_network_source_cache_desc),
-        NetworkSourceMode.Smart to stringResource(R.string.config_network_source_smart_desc),
-        NetworkSourceMode.LowStorage to stringResource(R.string.config_network_source_low_storage_desc),
+        NetworkSourceMode.Automatic to stringResource(R.string.config_network_source_smart_desc),
+        NetworkSourceMode.StreamOnly to stringResource(R.string.config_network_source_low_storage_desc),
     )
     val entries = modes.values.map { DropdownItem(title = it) }
 
-    WindowSpinnerPreference(
+    InstallerMiuixSpinnerPreference(
         title = stringResource(R.string.config_network_source_mode),
         summary = descriptions.getValue(currentMode),
         items = entries,

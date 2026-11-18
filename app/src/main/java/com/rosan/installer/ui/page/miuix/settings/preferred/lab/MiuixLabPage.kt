@@ -11,6 +11,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -30,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -50,18 +52,20 @@ import com.rosan.installer.domain.settings.model.preferences.SmartAuthorizerCand
 import com.rosan.installer.ui.navigation.LocalNavigator
 import com.rosan.installer.ui.page.main.settings.preferred.lab.LabSettingsAction
 import com.rosan.installer.ui.page.main.settings.preferred.lab.LabSettingsViewModel
-import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixBackButton
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixBackdropSurface
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixSpinnerPreference
+import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixTopAppBar
 import com.rosan.installer.ui.page.miuix.widgets.MiuixDraggableList
 import com.rosan.installer.ui.page.miuix.widgets.MiuixInstallerTipCard
 import com.rosan.installer.ui.page.miuix.widgets.MiuixRootImplementationDialog
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSettingsTipCard
 import com.rosan.installer.ui.page.miuix.widgets.MiuixSwitchWidget
-import com.rosan.installer.ui.theme.getMiuixAppBarColor
-import com.rosan.installer.ui.theme.installerMiuixBlurEffect
 import com.rosan.installer.ui.theme.rememberMiuixBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Checkbox
@@ -70,13 +74,13 @@ import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
+import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun MiuixLabPage(useBlur: Boolean, viewModel: LabSettingsViewModel = koinViewModel()) {
@@ -93,6 +97,38 @@ fun MiuixLabPage(useBlur: Boolean, viewModel: LabSettingsViewModel = koinViewMod
     val scrollBehavior = MiuixScrollBehavior()
     val showRootImplementationDialog = remember { mutableStateOf(false) }
     val showSmartAuthorizerSheet = remember { mutableStateOf(false) }
+    var showNonAdbConfirmation by rememberSaveable { mutableStateOf(false) }
+
+    WindowDialog(
+        show = showNonAdbConfirmation,
+        onDismissRequest = { showNonAdbConfirmation = false },
+        title = stringResource(R.string.lab_shizuku_non_adb_install),
+        content = {
+            Column {
+                Text(stringResource(R.string.lab_shizuku_non_adb_install_confirmation, context.packageName))
+                Spacer(modifier = Modifier.size(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = { showNonAdbConfirmation = false },
+                        text = stringResource(R.string.cancel),
+                    )
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            showNonAdbConfirmation = false
+                            viewModel.dispatch(LabSettingsAction.LabChangeShizukuNonAdbInstall(true))
+                        },
+                        text = stringResource(R.string.confirm),
+                        colors = ButtonDefaults.textButtonColorsPrimary(),
+                    )
+                }
+            }
+        },
+    )
 
     MiuixRootImplementationDialog(
         showState = showRootImplementationDialog,
@@ -118,174 +154,36 @@ fun MiuixLabPage(useBlur: Boolean, viewModel: LabSettingsViewModel = koinViewMod
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                modifier = Modifier.installerMiuixBlurEffect(topBarBackdrop),
-                color = topBarBackdrop.getMiuixAppBarColor(),
+            InstallerMiuixTopAppBar(
+                backdrop = topBarBackdrop,
                 title = stringResource(R.string.lab),
                 navigationIcon = {
-                    MiuixBackButton(onClick = { navigator.pop() })
+                    InstallerMiuixBackButton(onClick = { navigator.pop() })
                 },
                 scrollBehavior = scrollBehavior,
             )
         },
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(topBarBackdrop?.let { Modifier.layerBackdrop(it) } ?: Modifier)
-                .scrollEndHaptic()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            contentPadding = PaddingValues(
-                start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
-                top = paddingValues.calculateTopPadding(),
-                end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
-            ),
-            overscrollEffect = null,
+        InstallerMiuixBackdropSurface(
+            backdrop = topBarBackdrop,
+            modifier = Modifier.fillMaxSize(),
         ) {
-            item { MiuixSettingsTipCard(stringResource(R.string.lab_tip)) }
-            item { Spacer(modifier = Modifier.size(12.dp)) }
-            item { SmallTitle(stringResource(R.string.config_authorizer)) }
-            item {
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
-                ) {
-                    MiuixSwitchWidget(
-                        title = stringResource(R.string.config_try_multiple_authorizers_on_install),
-                        description = stringResource(R.string.config_try_multiple_authorizers_on_install_desc),
-                        checked = uiState.tryMultipleAuthorizersOnInstall,
-                        onCheckedChange = {
-                            viewModel.dispatch(
-                                LabSettingsAction.LabChangeTryMultipleAuthorizersOnInstall(it),
-                            )
-                        },
-                    )
-                    AnimatedVisibility(
-                        visible = uiState.tryMultipleAuthorizersOnInstall,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut(),
-                    ) {
-                        BasicComponent(
-                            title = stringResource(R.string.config_smart_authorizer_fallback_list),
-                            summary = stringResource(
-                                R.string.config_smart_authorizer_fallback_list_desc,
-                                smartAuthorizerSummary,
-                            ),
-                            onClick = {
-                                capabilityProvider.refreshPrivilegeStatus()
-                                showSmartAuthorizerSheet.value = true
-                            },
-                        )
-                    }
-                }
-            }
-            item { SmallTitle(stringResource(R.string.config_authorizer_root)) }
-            item {
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
-                ) {
-                    MiuixSwitchWidget(
-                        title = stringResource(R.string.lab_root_install_as_system_uid),
-                        description = stringResource(R.string.lab_root_install_as_system_uid_desc),
-                        checked = uiState.labRootInstallAsSystemUid,
-                        onCheckedChange = {
-                            viewModel.dispatch(LabSettingsAction.LabChangeRootInstallAsSystemUid(it))
-                        },
-                    )
-                    MiuixSwitchWidget(
-                        title = stringResource(R.string.lab_module_flashing),
-                        description = stringResource(R.string.lab_module_flashing_desc),
-                        checked = uiState.labRootEnableModuleFlash,
-                        onCheckedChange = { isEnabling ->
-                            if (isEnabling) {
-                                showRootImplementationDialog.value = true
-                            } else {
-                                viewModel.dispatch(LabSettingsAction.LabChangeRootModuleFlash(false))
-                            }
-                        },
-                    )
-                    AnimatedVisibility(
-                        visible = uiState.labRootEnableModuleFlash,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut(),
-                    ) {
-                        val currentRootImpl = uiState.labRootMode
-                        val data = remember {
-                            mapOf(
-                                RootMode.Magisk to "Magisk",
-                                RootMode.KernelSU to "KernelSU",
-                                RootMode.APatch to "APatch",
-                            )
-                        }
-
-                        val spinnerEntries = remember(data) {
-                            data.values.map { modeName ->
-                                DropdownItem(title = modeName)
-                            }
-                        }
-
-                        val selectedIndex = remember(currentRootImpl, data) {
-                            data.keys.toList().indexOf(currentRootImpl).coerceAtLeast(0)
-                        }
-
-                        Column {
-                            WindowSpinnerPreference(
-                                title = stringResource(R.string.lab_module_select_root_impl),
-                                items = spinnerEntries,
-                                selectedIndex = selectedIndex,
-                                onSelectedIndexChange = { newIndex ->
-                                    data.keys.elementAtOrNull(newIndex)?.let { impl ->
-                                        viewModel.dispatch(LabSettingsAction.LabChangeRootImplementation(impl))
-                                    }
-                                },
-                            )
-                            MiuixSwitchWidget(
-                                title = stringResource(R.string.lab_module_flashing_show_art),
-                                description = stringResource(R.string.lab_module_flashing_show_art_desc),
-                                checked = uiState.labRootShowModuleArt,
-                                onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeRootShowModuleArt(it)) },
-                            )
-                        }
-                    }
-                }
-            }
-            item { SmallTitle(stringResource(R.string.lab_compatibility)) }
-            item {
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
-                ) {
-                    MiuixSwitchWidget(
-                        title = stringResource(R.string.lab_enable_abi_override),
-                        description = stringResource(R.string.lab_enable_abi_override_desc),
-                        checked = uiState.labEnableAbiOverride,
-                        onCheckedChange = {
-                            viewModel.dispatch(LabSettingsAction.LabChangeEnableAbiOverride(it))
-                        },
-                    )
-                    AnimatedVisibility(
-                        visible = uiState.labEnableAbiOverride,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut(),
-                    ) {
-                        MiuixSwitchWidget(
-                            title = stringResource(R.string.lab_try_different_architecture),
-                            description = stringResource(R.string.lab_try_different_architecture_desc),
-                            checked = uiState.labTryDifferentArchitecture,
-                            onCheckedChange = {
-                                viewModel.dispatch(LabSettingsAction.LabChangeTryDifferentArchitecture(it))
-                            },
-                        )
-                    }
-                }
-            }
-            if (AppConfig.isRespectPlatformInstallPolicyAvailable) {
-                item { SmallTitle(stringResource(R.string.lab_unstable_features)) }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scrollEndHaptic()
+                    .overScrollVertical()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                contentPadding = PaddingValues(
+                    start = horizontalSafeInsets.calculateStartPadding(layoutDirection),
+                    top = paddingValues.calculateTopPadding(),
+                    end = horizontalSafeInsets.calculateEndPadding(layoutDirection),
+                ),
+                overscrollEffect = null,
+            ) {
+                item { MiuixSettingsTipCard(stringResource(R.string.lab_tip)) }
+                item { Spacer(modifier = Modifier.size(12.dp)) }
+                item { SmallTitle(stringResource(R.string.config_authorizer)) }
                 item {
                     Card(
                         modifier = Modifier
@@ -293,19 +191,172 @@ fun MiuixLabPage(useBlur: Boolean, viewModel: LabSettingsViewModel = koinViewMod
                             .padding(bottom = 12.dp),
                     ) {
                         MiuixSwitchWidget(
-                            title = stringResource(R.string.lab_respect_platform_install_policy),
-                            description = stringResource(R.string.lab_respect_platform_install_policy_desc),
-                            checked = uiState.labRespectPlatformInstallPolicy,
+                            title = stringResource(R.string.config_try_multiple_authorizers_on_install),
+                            description = stringResource(R.string.config_try_multiple_authorizers_on_install_desc),
+                            checked = uiState.tryMultipleAuthorizersOnInstall,
                             onCheckedChange = {
                                 viewModel.dispatch(
-                                    LabSettingsAction.LabChangeRespectPlatformInstallPolicy(it),
+                                    LabSettingsAction.LabChangeTryMultipleAuthorizersOnInstall(it),
                                 )
                             },
                         )
+                        AnimatedVisibility(
+                            visible = uiState.tryMultipleAuthorizersOnInstall,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
+                        ) {
+                            BasicComponent(
+                                title = stringResource(R.string.config_smart_authorizer_fallback_list),
+                                summary = stringResource(
+                                    R.string.config_smart_authorizer_fallback_list_desc,
+                                    smartAuthorizerSummary,
+                                ),
+                                onClick = {
+                                    capabilityProvider.refreshPrivilegeStatus()
+                                    showSmartAuthorizerSheet.value = true
+                                },
+                            )
+                        }
                     }
                 }
+                item { SmallTitle(stringResource(R.string.config_authorizer_root)) }
+                item {
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp)
+                            .padding(bottom = 12.dp),
+                    ) {
+                        MiuixSwitchWidget(
+                            title = stringResource(R.string.lab_root_install_as_system_uid),
+                            description = stringResource(R.string.lab_root_install_as_system_uid_desc),
+                            checked = uiState.labRootInstallAsSystemUid,
+                            onCheckedChange = {
+                                viewModel.dispatch(LabSettingsAction.LabChangeRootInstallAsSystemUid(it))
+                            },
+                        )
+                        MiuixSwitchWidget(
+                            title = stringResource(R.string.lab_module_flashing),
+                            description = stringResource(R.string.lab_module_flashing_desc),
+                            checked = uiState.labRootEnableModuleFlash,
+                            onCheckedChange = { isEnabling ->
+                                if (isEnabling) {
+                                    showRootImplementationDialog.value = true
+                                } else {
+                                    viewModel.dispatch(LabSettingsAction.LabChangeRootModuleFlash(false))
+                                }
+                            },
+                        )
+                        AnimatedVisibility(
+                            visible = uiState.labRootEnableModuleFlash,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
+                        ) {
+                            val currentRootImpl = uiState.labRootMode
+                            val data = remember {
+                                mapOf(
+                                    RootMode.Magisk to "Magisk",
+                                    RootMode.KernelSU to "KernelSU",
+                                    RootMode.APatch to "APatch",
+                                )
+                            }
+
+                            val spinnerEntries = remember(data) {
+                                data.values.map { modeName ->
+                                    DropdownItem(title = modeName)
+                                }
+                            }
+
+                            val selectedIndex = remember(currentRootImpl, data) {
+                                data.keys.toList().indexOf(currentRootImpl).coerceAtLeast(0)
+                            }
+
+                            Column {
+                                InstallerMiuixSpinnerPreference(
+                                    title = stringResource(R.string.lab_module_select_root_impl),
+                                    items = spinnerEntries,
+                                    selectedIndex = selectedIndex,
+                                    onSelectedIndexChange = { newIndex ->
+                                        data.keys.elementAtOrNull(newIndex)?.let { impl ->
+                                            viewModel.dispatch(LabSettingsAction.LabChangeRootImplementation(impl))
+                                        }
+                                    },
+                                )
+                                MiuixSwitchWidget(
+                                    title = stringResource(R.string.lab_module_flashing_show_art),
+                                    description = stringResource(R.string.lab_module_flashing_show_art_desc),
+                                    checked = uiState.labRootShowModuleArt,
+                                    onCheckedChange = { viewModel.dispatch(LabSettingsAction.LabChangeRootShowModuleArt(it)) },
+                                )
+                            }
+                        }
+                    }
+                }
+                item { SmallTitle(stringResource(R.string.lab_compatibility)) }
+                item {
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp)
+                            .padding(bottom = 12.dp),
+                    ) {
+                        MiuixSwitchWidget(
+                            title = stringResource(R.string.lab_shizuku_non_adb_install),
+                            description = stringResource(R.string.lab_shizuku_non_adb_install_desc),
+                            checked = uiState.labShizukuNonAdbInstall,
+                            onCheckedChange = { enabled ->
+                                if (enabled) {
+                                    showNonAdbConfirmation = true
+                                } else {
+                                    viewModel.dispatch(LabSettingsAction.LabChangeShizukuNonAdbInstall(false))
+                                }
+                            },
+                        )
+                        MiuixSwitchWidget(
+                            title = stringResource(R.string.lab_enable_abi_override),
+                            description = stringResource(R.string.lab_enable_abi_override_desc),
+                            checked = uiState.labEnableAbiOverride,
+                            onCheckedChange = {
+                                viewModel.dispatch(LabSettingsAction.LabChangeEnableAbiOverride(it))
+                            },
+                        )
+                        AnimatedVisibility(
+                            visible = uiState.labEnableAbiOverride,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
+                        ) {
+                            MiuixSwitchWidget(
+                                title = stringResource(R.string.lab_try_different_architecture),
+                                description = stringResource(R.string.lab_try_different_architecture_desc),
+                                checked = uiState.labTryDifferentArchitecture,
+                                onCheckedChange = {
+                                    viewModel.dispatch(LabSettingsAction.LabChangeTryDifferentArchitecture(it))
+                                },
+                            )
+                        }
+                    }
+                }
+                if (AppConfig.isRespectPlatformInstallPolicyAvailable) {
+                    item { SmallTitle(stringResource(R.string.lab_unstable_features)) }
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp)
+                                .padding(bottom = 12.dp),
+                        ) {
+                            MiuixSwitchWidget(
+                                title = stringResource(R.string.lab_respect_platform_install_policy),
+                                description = stringResource(R.string.lab_respect_platform_install_policy_desc),
+                                checked = uiState.labRespectPlatformInstallPolicy,
+                                onCheckedChange = {
+                                    viewModel.dispatch(
+                                        LabSettingsAction.LabChangeRespectPlatformInstallPolicy(it),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+                item { Spacer(Modifier.navigationBarsPadding()) }
             }
-            item { Spacer(Modifier.navigationBarsPadding()) }
         }
     }
 

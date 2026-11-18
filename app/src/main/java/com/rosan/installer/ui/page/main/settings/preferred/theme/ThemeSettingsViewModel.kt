@@ -72,9 +72,11 @@ class ThemeSettingsViewModel(
             showMiuixUI = prefs.showMiuixUI,
             useBlur = prefs.useBlur,
             themeMode = prefs.themeMode,
+            useAmoled = prefs.useAmoled,
             paletteStyle = prefs.paletteStyle,
             colorSpec = prefs.colorSpec,
             useDynamicColor = prefs.useDynamicColor,
+            useMiuixOs4 = prefs.useMiuixOs4,
             useMiuixMonet = prefs.useMiuixMonet,
             useAppleFloatingBar = prefs.useAppleFloatingBar,
             seedColor = effectiveSeedColor,
@@ -104,6 +106,10 @@ class ThemeSettingsViewModel(
                 updateSetting(StringSetting.ThemeMode, action.mode.name)
             }
 
+            is ThemeSettingsAction.SetUseAmoled -> viewModelScope.launch {
+                updateSetting(BooleanSetting.ThemeUseAmoled, action.use)
+            }
+
             is ThemeSettingsAction.SetPaletteStyle -> viewModelScope.launch {
                 updateSetting(StringSetting.ThemePaletteStyle, action.style.name)
             }
@@ -114,6 +120,10 @@ class ThemeSettingsViewModel(
 
             is ThemeSettingsAction.SetUseDynamicColor -> viewModelScope.launch {
                 updateSetting(BooleanSetting.ThemeUseDynamicColor, action.use)
+            }
+
+            is ThemeSettingsAction.SetUseMiuixOs4 -> viewModelScope.launch {
+                updateSetting(BooleanSetting.UiUseMiuixOs4, action.use)
             }
 
             is ThemeSettingsAction.SetUseMiuixMonet -> viewModelScope.launch {

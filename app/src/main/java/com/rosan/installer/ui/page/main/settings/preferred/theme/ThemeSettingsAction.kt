@@ -13,9 +13,11 @@ sealed interface ThemeSettingsAction {
     data class ChangeUseMiuix(val useMiuix: Boolean) : ThemeSettingsAction
     data class SetUseBlur(val enable: Boolean) : ThemeSettingsAction
     data class SetThemeMode(val mode: ThemeMode) : ThemeSettingsAction
+    data class SetUseAmoled(val use: Boolean) : ThemeSettingsAction
     data class SetPaletteStyle(val style: PaletteStyle) : ThemeSettingsAction
     data class SetColorSpec(val spec: ThemeColorSpec) : ThemeSettingsAction
     data class SetUseDynamicColor(val use: Boolean) : ThemeSettingsAction
+    data class SetUseMiuixOs4(val use: Boolean) : ThemeSettingsAction
     data class SetUseMiuixMonet(val use: Boolean) : ThemeSettingsAction
     data class SetUseAppleFloatingBar(val use: Boolean) : ThemeSettingsAction
     data class SetDynColorFollowPkgIcon(val follow: Boolean) : ThemeSettingsAction

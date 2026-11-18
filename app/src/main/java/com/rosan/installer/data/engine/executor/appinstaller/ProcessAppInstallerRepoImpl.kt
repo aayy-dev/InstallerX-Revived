@@ -84,8 +84,12 @@ class ProcessAppInstallerRepoImpl(
         )
     }
 
-    override suspend fun doUninstallWork(config: ConfigModel, packageName: String) = runWithProcess(config) {
-        super.doUninstallWork(config, packageName)
+    override suspend fun getUninstallPackageInfo(config: ConfigModel, packageName: String, userId: Int, flags: Long): PackageInfo = runWithProcess(config) {
+        super.getUninstallPackageInfo(config, packageName, userId, flags)
+    }
+
+    override suspend fun doUninstallWork(config: ConfigModel, packageName: String, userId: Int) = runWithProcess(config) {
+        super.doUninstallWork(config, packageName, userId)
     }
 
     override suspend fun approveSession(config: ConfigModel, sessionId: Int, granted: Boolean) = runWithProcess(config) {
@@ -111,7 +115,11 @@ class ProcessAppInstallerRepoImpl(
      * registered first. The registration is one-shot and consumed by the next createSession call, so
      * a concurrent install from another app can only make this session fall back to being verified.
      */
-    override suspend fun beforeCreateSession(params: PackageInstaller.SessionParams) {
+    override suspend fun prepareSessionCreation(
+        config: ConfigModel,
+        params: PackageInstaller.SessionParams,
+        respectPlatformInstallPolicy: Boolean,
+    ) {
         if (!isSystemUidSession) return
         if (!params.installFlags.hasFlag(PackageManagerHidden.INSTALL_DISABLE_VERIFICATION)) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {

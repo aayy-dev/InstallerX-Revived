@@ -3,6 +3,7 @@
 package com.rosan.installer.data.engine.repository
 
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.os.Build
 import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.core.reflection.ReflectionProvider
@@ -10,6 +11,7 @@ import com.rosan.installer.data.engine.executor.appinstaller.DhizukuAppInstaller
 import com.rosan.installer.data.engine.executor.appinstaller.NoneAppInstallerRepoImpl
 import com.rosan.installer.data.engine.executor.appinstaller.ProcessAppInstallerRepoImpl
 import com.rosan.installer.data.engine.executor.appinstaller.ShizukuAppInstallerRepoImpl
+import com.rosan.installer.data.engine.executor.appinstaller.ShizukuNonAdbAppInstallerRepoImpl
 import com.rosan.installer.data.engine.executor.appinstaller.SystemAppInstallerRepoImpl
 import com.rosan.installer.data.engine.policy.PlatformInstallPolicyChecker
 import com.rosan.installer.domain.device.provider.DeviceCapabilityProvider
@@ -45,7 +47,7 @@ class AppInstallerRepositoryImpl(
     private val selfUpdateRecoveryRepository: SelfUpdateRecoveryRepository,
     private val systemInfoProvider: SystemInfoProvider,
 ) : AppInstallerRepository {
-    override suspend fun resolveInstallerPackageName(config: ConfigModel): String? = executeWithRepo(config) { repo ->
+    override suspend fun resolveInstallerPackageName(config: ConfigModel): String? = executeWithRepo(config, resolveInstallRepo(config)) { repo ->
         repo.resolveInstallerPackageName(config)
     }
 
@@ -59,7 +61,7 @@ class AppInstallerRepositoryImpl(
         sharedUserIdExemption: List<String>,
         onProgress: suspend (InstallWriteProgress) -> Unit,
         onPhaseChanged: suspend (InstallPhase) -> Unit,
-    ) = executeWithRepo(config) { repo ->
+    ) = executeWithRepo(config, resolveInstallRepo(config)) { repo ->
         persistSelfUpdatePostInstallState(config, entities, metadata)
 
         val requestedRespectPlatformInstallPolicy =
@@ -164,8 +166,12 @@ class AppInstallerRepositoryImpl(
         const val TAG = "AppInstallerRepository"
     }
 
-    override suspend fun doUninstallWork(config: ConfigModel, packageName: String) = executeWithRepo(config) { repo ->
-        repo.doUninstallWork(config, packageName)
+    override suspend fun getUninstallPackageInfo(config: ConfigModel, packageName: String, userId: Int, flags: Long): PackageInfo = executeWithRepo(config) { repo ->
+        repo.getUninstallPackageInfo(config, packageName, userId, flags)
+    }
+
+    override suspend fun doUninstallWork(config: ConfigModel, packageName: String, userId: Int) = executeWithRepo(config) { repo ->
+        repo.doUninstallWork(config, packageName, userId)
     }
 
     override suspend fun approveSession(config: ConfigModel, sessionId: Int, granted: Boolean) = executeWithRepo(config, resolveSessionApprovalRepo(config)) { repo ->
@@ -232,9 +238,15 @@ class AppInstallerRepositoryImpl(
         appSettingsRepo,
     )
 
-    /**
-     * Resolve the InstallerRepo based on the provided
-     */
+    // Keep the experiment scoped to installation; uninstall and external approvals use resolveRepo.
+    private suspend fun resolveInstallRepo(config: ConfigModel): AppInstallerRepository = if (config.authorizer == Authorizer.Shizuku &&
+        appSettingsRepo.getBoolean(BooleanSetting.LabShizukuNonAdbInstall, false).first()
+    ) {
+        ShizukuNonAdbAppInstallerRepoImpl(context, reflect, deviceCapabilityProvider, postInstallTaskProvider, appSettingsRepo)
+    } else {
+        resolveRepo(config)
+    }
+
     private fun resolveRepo(config: ConfigModel) = when (config.authorizer) {
         Authorizer.Shizuku -> ShizukuAppInstallerRepoImpl(context, reflect, deviceCapabilityProvider, postInstallTaskProvider, appSettingsRepo)
 

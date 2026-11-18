@@ -12,6 +12,7 @@ sealed interface LabSettingsAction {
     data class LabChangeRootInstallAsSystemUid(val enable: Boolean) : LabSettingsAction
     data class LabChangeAllowInstallWithoutUserAction(val enable: Boolean) : LabSettingsAction
     data class LabChangeRespectPlatformInstallPolicy(val enable: Boolean) : LabSettingsAction
+    data class LabChangeShizukuNonAdbInstall(val enable: Boolean) : LabSettingsAction
     data class LabChangeEnableAbiOverride(val enable: Boolean) : LabSettingsAction
     data class LabChangeTryDifferentArchitecture(val enable: Boolean) : LabSettingsAction
     data class LabChangeTryMultipleAuthorizersOnInstall(val enable: Boolean) : LabSettingsAction

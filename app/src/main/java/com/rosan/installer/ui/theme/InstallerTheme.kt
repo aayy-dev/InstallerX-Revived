@@ -28,12 +28,14 @@ import com.rosan.installer.domain.settings.model.preferences.theme.ThemeColorSpe
 import com.rosan.installer.domain.settings.model.preferences.theme.ThemeMode
 import com.rosan.installer.ui.theme.material.animateAsState
 import com.rosan.installer.ui.theme.material.dynamicColorScheme
+import top.yukonga.miuix.kmp.material.isRenderEffectSupported
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeColorSpec as MiuixColorSpec
 import top.yukonga.miuix.kmp.theme.ThemeController
 import top.yukonga.miuix.kmp.theme.ThemePaletteStyle as MiuixPaletteStyle
 
+private val LocalUseMiuixOs4 = staticCompositionLocalOf { false }
 private val LocalIsDark = staticCompositionLocalOf { false }
 private val LocalPaletteStyle = staticCompositionLocalOf { PaletteStyle.Expressive }
 private val LocalThemeColorSpec = staticCompositionLocalOf { ThemeColorSpec.SPEC_2025 }
@@ -45,6 +47,10 @@ private val LocalUseDynamicColor = staticCompositionLocalOf { false }
 val LocalInstallerColorScheme = staticCompositionLocalOf<ColorScheme> { error("No ColorScheme provided") }
 
 object InstallerTheme {
+    val useMiuixOs4: Boolean
+        @Composable @ReadOnlyComposable
+        get() = LocalUseMiuixOs4.current
+
     val colorScheme: ColorScheme
         @Composable @ReadOnlyComposable
         get() = LocalInstallerColorScheme.current
@@ -87,6 +93,8 @@ fun InstallerTheme(
     useDynamicColor: Boolean,
     useMiuixMonet: Boolean,
     seedColor: Color,
+    useAmoled: Boolean = false,
+    useMiuixOs4: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val preservedContent = remember {
@@ -117,10 +125,24 @@ fun InstallerTheme(
         )
     }
 
+    // Only callers that opt in use AMOLED backgrounds, and only in dark mode.
+    val colorScheme = if (useAmoled && isDark) {
+        baseColorScheme.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceContainer = Color.Black,
+        )
+    } else {
+        baseColorScheme
+    }
+
     // 2. Wrap it with smooth transitions
-    val animatedColorScheme = baseColorScheme.animateAsState()
+    val animatedColorScheme = colorScheme.animateAsState()
 
     CompositionLocalProvider(
+        LocalUseMiuixOs4 provides (
+            useMiuix && useMiuixOs4 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && isRenderEffectSupported()
+            ),
         LocalIsDark provides isDark,
         LocalPaletteStyle provides paletteStyle,
         LocalSeedColor provides seedColor,
@@ -145,7 +167,13 @@ fun InstallerTheme(
                 paletteStyle = paletteStyle,
                 colorSpec = colorSpec,
             ) {
-                preservedContent(content)
+                val colors = MiuixTheme.colorScheme
+                // Keep the controller's dynamic-color mode and the card palette intact.
+                MiuixTheme(
+                    colors = if (useAmoled && isDark) colors.copy(surface = Color.Black) else colors,
+                ) {
+                    preservedContent(content)
+                }
             }
         } else {
             InstallerMaterialExpressiveTheme(
@@ -233,18 +261,19 @@ fun InstallerMiuixTheme(
             PaletteStyle.Cmf -> MiuixPaletteStyle.Cmf
         }
 
-        val colorSpecVersion = when (paletteStyle.effectiveSpec(colorSpec)) {
-            ThemeColorSpec.SPEC_2026 -> MiuixColorSpec.Spec2026
-            ThemeColorSpec.SPEC_2025 -> MiuixColorSpec.Spec2025
+        // Pass the saved preference; Miuix resolves palette support and forces SPEC_2026 for Cmf.
+        // SPEC_2026 is only an effective spec in our UI, so fall back to the default preference.
+        val preferredColorSpec = when (colorSpec) {
             ThemeColorSpec.SPEC_2021 -> MiuixColorSpec.Spec2021
+            else -> MiuixColorSpec.Spec2025
         }
 
-        remember(colorSchemeMode, keyColor, paletteStyle, colorSpecVersion, darkTheme) {
+        remember(colorSchemeMode, keyColor, paletteStyle, preferredColorSpec, darkTheme) {
             ThemeController(
                 colorSchemeMode = colorSchemeMode,
                 keyColor = keyColor,
                 paletteStyle = style,
-                colorSpec = colorSpecVersion,
+                colorSpec = preferredColorSpec,
                 isDark = darkTheme,
             )
         }

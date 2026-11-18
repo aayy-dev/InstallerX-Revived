@@ -41,12 +41,14 @@ class AppDataStore(private val dataStore: DataStore<Preferences>, private val js
         // UI Related
         val UI_USE_BLUR = register(booleanPreferencesKey("ui_use_blur"), PreferenceValueType.BOOLEAN)
         val THEME_MODE = register(stringPreferencesKey("theme_mode"), PreferenceValueType.STRING)
+        val THEME_USE_AMOLED = register(booleanPreferencesKey("theme_use_amoled"), PreferenceValueType.BOOLEAN)
         val THEME_PALETTE_STYLE = register(stringPreferencesKey("theme_palette_style"), PreferenceValueType.STRING)
         val THEME_COLOR_SPEC = register(stringPreferencesKey("theme_color_spec"), PreferenceValueType.STRING)
         val THEME_USE_DYNAMIC_COLOR = register(booleanPreferencesKey("theme_use_dynamic_color"), PreferenceValueType.BOOLEAN)
         val THEME_SEED_COLOR = register(intPreferencesKey("theme_seed_color"), PreferenceValueType.INT)
         val THEME_WALLPAPER_SEED_COLOR = register(intPreferencesKey("theme_wallpaper_seed_color"), PreferenceValueType.INT)
         val UI_USE_MIUIX = register(booleanPreferencesKey("ui_use_miui_x"), PreferenceValueType.BOOLEAN)
+        val UI_USE_MIUIX_OS4 = register(booleanPreferencesKey("ui_use_miuix_os4"), PreferenceValueType.BOOLEAN)
         val UI_USE_MIUIX_MONET = register(booleanPreferencesKey("ui_use_miui_x_monet"), PreferenceValueType.BOOLEAN)
         val UI_USE_APPLE_FLOATING_BAR = register(booleanPreferencesKey("ui_use_apple_floating_bar"), PreferenceValueType.BOOLEAN)
         val UI_DYN_COLOR_FOLLOW_PKG_ICON =
@@ -135,8 +137,6 @@ class AppDataStore(private val dataStore: DataStore<Preferences>, private val js
             register(booleanPreferencesKey("check_app_signature"), PreferenceValueType.BOOLEAN)
         val CHECK_SOURCE_STAMP =
             register(booleanPreferencesKey("check_source_stamp"), PreferenceValueType.BOOLEAN)
-        val CHECK_SPLIT_PACKAGE_SIGNATURES =
-            register(booleanPreferencesKey("check_split_package_signatures"), PreferenceValueType.BOOLEAN)
         val SHOW_SIGNATURE_INFO_ON_MATCH =
             register(booleanPreferencesKey("show_signature_info_on_match"), PreferenceValueType.BOOLEAN)
         val SHOW_SIGNATURE_DETAILS =
@@ -185,6 +185,8 @@ class AppDataStore(private val dataStore: DataStore<Preferences>, private val js
             register(booleanPreferencesKey("lab_install_without_user_action"), PreferenceValueType.BOOLEAN)
         val LAB_RESPECT_PLATFORM_INSTALL_POLICY =
             register(booleanPreferencesKey("lab_respect_platform_install_policy"), PreferenceValueType.BOOLEAN)
+        val LAB_SHIZUKU_NON_ADB_INSTALL =
+            register(booleanPreferencesKey("lab_shizuku_non_adb_install"), PreferenceValueType.BOOLEAN)
         val LAB_ENABLE_ABI_OVERRIDE =
             register(booleanPreferencesKey("lab_enable_abi_override"), PreferenceValueType.BOOLEAN)
         val LAB_TRY_DIFFERENT_ARCHITECTURE =
@@ -197,6 +199,10 @@ class AppDataStore(private val dataStore: DataStore<Preferences>, private val js
         val NETWORK_SOURCE_MODE = register(stringPreferencesKey("network_source_mode"), PreferenceValueType.STRING)
         val NETWORK_SOURCE_MODE_WARNING_ACKNOWLEDGED =
             register(booleanPreferencesKey("network_source_mode_warning_acknowledged"), PreferenceValueType.BOOLEAN)
+
+        val NETWORK_APP_NAME_SOURCE = register(stringPreferencesKey("network_app_name_source"), PreferenceValueType.STRING)
+        val NETWORK_LOAD_APP_ICON =
+            register(booleanPreferencesKey("network_load_app_icon"), PreferenceValueType.BOOLEAN)
 
         // Debug
         val ENABLE_FILE_LOGGING = register(booleanPreferencesKey("enable_file_logging"), PreferenceValueType.BOOLEAN)

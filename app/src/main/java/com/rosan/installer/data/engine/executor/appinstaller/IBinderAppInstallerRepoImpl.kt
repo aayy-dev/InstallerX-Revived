@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.IPackageInstaller
 import android.content.pm.IPackageInstallerSession
 import android.content.pm.IPackageManager
+import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageInstaller.Session
 import android.content.pm.PackageManager
@@ -79,12 +80,6 @@ abstract class IBinderAppInstallerRepoImpl(
     }
 
     /**
-     * Called right before the platform session is created, through the same binder path as the
-     * session itself.
-     */
-    protected open suspend fun beforeCreateSession(params: PackageInstaller.SessionParams) = Unit
-
-    /**
      * Called after one package's session has been committed successfully. Must not throw: the
      * package is already installed at this point.
      */
@@ -123,7 +118,7 @@ abstract class IBinderAppInstallerRepoImpl(
         InstallerMode.Custom -> installer ?: BuildConfig.APPLICATION_ID
     }
 
-    private suspend fun getPackageInstaller(config: ConfigModel): PackageInstaller {
+    protected open suspend fun getPackageInstaller(config: ConfigModel): PackageInstaller {
         val packageInstaller = resolvePackageInstallerBinder()
 
         // Resolve the target user ID based on config
@@ -159,7 +154,7 @@ abstract class IBinderAppInstallerRepoImpl(
         Dhizuku.getOwnerPackageName()
     }
 
-    private suspend fun setSessionIBinder(session: Session) {
+    protected open suspend fun setSessionIBinder(session: Session) {
         val iPackageInstallerSession = reflect.getValue<IInterface>(session, "mSession") ?: return
         val iBinder = iPackageInstallerSession.asBinder()
         reflect.setFieldValue(
@@ -235,8 +230,20 @@ abstract class IBinderAppInstallerRepoImpl(
         }
     }
 
+    override suspend fun getUninstallPackageInfo(config: ConfigModel, packageName: String, userId: Int, flags: Long): PackageInfo {
+        require(userId >= 0) { "Invalid uninstall user: $userId" }
+        val pm = IPackageManager.Stub.asInterface(iBinderWrapper(ServiceManager.getService("package")))
+        return (
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.getPackageInfo(packageName, flags, userId)
+            } else {
+                pm.getPackageInfo(packageName, flags.toInt(), userId)
+            }
+            ) ?: throw PackageManager.NameNotFoundException(packageName)
+    }
+
     @SuppressLint("MissingPermission")
-    override suspend fun doUninstallWork(config: ConfigModel, packageName: String) {
+    override suspend fun doUninstallWork(config: ConfigModel, packageName: String, userId: Int) {
         val packageInstaller = resolvePackageInstallerBinder()
 
         // Prepare parameters for the direct AIDL call.
@@ -248,11 +255,8 @@ abstract class IBinderAppInstallerRepoImpl(
             else -> context.packageName
         }
 
-        // Uninstall targets the current user by default. Profile target-user settings are for
-        // installs and can otherwise make launcher-visible apps appear unchanged after uninstall.
-        val currentUserId = AndroidProcess.myUid() / 100000
-
-        Timber.d("Directly calling IPackageInstaller.uninstall with flags: $flags, userId: $currentUserId")
+        require(userId >= 0) { "Invalid uninstall user: $userId" }
+        Timber.d("Directly calling IPackageInstaller.uninstall with flags: $flags, userId: $userId")
 
         // Directly call the method from the stub interface.
         packageInstaller.uninstall(
@@ -260,7 +264,7 @@ abstract class IBinderAppInstallerRepoImpl(
             callerPackageName,
             flags,
             receiver.getIntentSender(),
-            currentUserId,
+            userId,
         )
 
         // The result verification logic remains the same.
@@ -330,7 +334,7 @@ abstract class IBinderAppInstallerRepoImpl(
                 metadata.onPlatformSessionActiveChanged(createdSession.id, true)
                 installIts(entities, createdSession.session, progressWriter)
                 onPhaseChanged(InstallPhase.INSTALLING)
-                commit(createdSession.session)
+                commit(config, createdSession.id, createdSession.session)
                 createdSession.params
             } catch (e: Exception) {
                 session?.abandon()
@@ -425,7 +429,7 @@ abstract class IBinderAppInstallerRepoImpl(
         }
         // --- abiOverride End ---
 
-        beforeCreateSession(params)
+        prepareSessionCreation(config, params, respectPlatformInstallPolicy)
         val sessionId = packageInstaller.createSession(params)
         val session = packageInstaller.openSession(sessionId)
         setSessionIBinder(session)
@@ -499,8 +503,14 @@ abstract class IBinderAppInstallerRepoImpl(
         false
     }
 
+    protected open suspend fun prepareSessionCreation(
+        config: ConfigModel,
+        params: PackageInstaller.SessionParams,
+        respectPlatformInstallPolicy: Boolean,
+    ) = Unit
+
     @SuppressLint("RequestInstallPackagesPolicy")
-    private suspend fun commit(session: Session) {
+    protected open suspend fun commit(config: ConfigModel, sessionId: Int, session: Session) {
         val receiver = LocalIntentReceiver(reflect)
         session.commit(receiver.getIntentSender())
         PackageManagerUtil.installResultVerify(context, receiver)
