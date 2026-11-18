@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
@@ -29,8 +30,8 @@ fun InstallerActivityContent(session: InstallerSessionRepository, themeStateProv
     if (!uiState.isLoaded) return
 
     val context = LocalContext.current
-    val isPhone = context.isPhoneDevice
-    val isTelevision = context.isTelevision
+    val isPhone = remember(context) { context.isPhoneDevice }
+    val isTelevision = remember(context) { context.isTelevision }
     // The TV installer reuses Material 3 stage content, so it always runs on the Material theme.
     val useMiuix = uiState.useMiuix && !isTelevision
     LaunchedEffect(context, isPhone) {

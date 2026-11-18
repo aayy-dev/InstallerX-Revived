@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -29,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,6 +66,7 @@ import com.rosan.installer.ui.page.main.widget.setting.DropDownMenuWidget
 import com.rosan.installer.ui.page.main.widget.setting.ExpressiveBackButton
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
+import com.rosan.installer.ui.theme.LocalTvLayout
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
 import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
@@ -328,6 +331,9 @@ fun LabPage(useBlur: Boolean, viewModel: LabSettingsViewModel = koinViewModel())
     if (showSmartAuthorizerSheet.value) {
         ModalBottomSheet(
             onDismissRequest = { showSmartAuthorizerSheet.value = false },
+            // On TV, open fully so the remote can reach every row, and drop the drag handle.
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = LocalTvLayout.current),
+            dragHandle = if (LocalTvLayout.current) null else ({ BottomSheetDefaults.DragHandle() }),
         ) {
             WindowNavigationEventBridge()
             SmartAuthorizerBottomSheet(
@@ -392,7 +398,9 @@ private fun SmartAuthorizerBottomSheet(
             style = MaterialTheme.typography.headlineSmall,
         )
         InfoTipCard(
-            text = stringResource(R.string.config_smart_authorizer_fallback_list_tip),
+            text = stringResource(
+                if (LocalTvLayout.current) R.string.config_smart_authorizer_fallback_list_tip_tv else R.string.config_smart_authorizer_fallback_list_tip,
+            ),
             noPadding = true,
         )
         DraggableList(

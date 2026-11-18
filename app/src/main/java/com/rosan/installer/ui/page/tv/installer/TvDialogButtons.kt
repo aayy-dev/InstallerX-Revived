@@ -22,16 +22,18 @@ import com.rosan.installer.ui.page.main.installer.dialog.DialogButton
 
 /**
  * Renders a stage's dialog buttons as a vertical list of TV buttons. The button marked
- * [DialogButton.isPrimary] (or else the first enabled one) receives focus whenever the button set
- * changes, so OK on the remote runs the stage's main action.
+ * [DialogButton.isDefaultFocus] (or else the first enabled one) receives focus whenever the button
+ * set changes, and again when the buttons are re-enabled after all being disabled.
  */
 @Composable
 internal fun TvDialogButtons(buttons: List<DialogButton>, modifier: Modifier = Modifier) {
-    val primaryIndex = buttons.indexOfFirst { it.isPrimary && it.enabled }
+    val primaryIndex = buttons.indexOfFirst { it.isDefaultFocus && it.enabled }
         .takeIf { it >= 0 } ?: buttons.indexOfFirst { it.enabled }
     val primaryFocusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(buttons.map { it.text }) {
+    // Keyed on whether any button is enabled, not on each button's state, so toggling one action
+    // (e.g. while selecting packages) never pulls focus away from the content.
+    LaunchedEffect(buttons.map { it.text }, buttons.any { it.enabled }) {
         if (primaryIndex >= 0) primaryFocusRequester.requestFocus()
     }
 

@@ -7,7 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,14 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -51,6 +46,8 @@ import com.rosan.installer.ui.page.main.installer.dialog.dialogGenerateParams
 import com.rosan.installer.ui.page.main.installer.dialog.dismissInstallerDialog
 import com.rosan.installer.ui.page.main.installer.dialog.inner.ModuleInstallSheetContent
 import com.rosan.installer.ui.page.main.widget.util.InstallerEventCollector
+import com.rosan.installer.ui.page.tv.TvFocusEnvironment
+import com.rosan.installer.ui.page.tv.TvSafeArea
 import com.rosan.installer.ui.theme.InstallerMaterialExpressiveTheme
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalInstallerColorScheme
@@ -99,18 +96,12 @@ fun TvInstallerPage(session: InstallerSessionRepository, viewModel: InstallerVie
             compatStatusBarColor = false,
         ) {
             InstallerTvTheme(colorScheme = activeColorScheme, isDark = isDark) {
-                BackHandler {
-                    if (stage is InstallerStage.InstallingModule) {
-                        if (viewModel.uiState.value.isDismissible) viewModel.dispatch(InstallerViewAction.Close)
-                    } else {
-                        dismissInstallerDialog(viewModel)
-                    }
-                }
+                BackHandler { dismissTvInstaller(viewModel) }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surfaceContainer,
                 ) {
-                    TvFocusVisibleContent {
+                    TvFocusEnvironment {
                         if (stage is InstallerStage.InstallingModule) {
                             Box(
                                 modifier = Modifier
@@ -137,6 +128,23 @@ fun TvInstallerPage(session: InstallerSessionRepository, viewModel: InstallerVie
                 }
             }
         }
+    }
+}
+
+/**
+ * Back on TV closes the installer instead of parking it as a notification, which TV launchers may
+ * not surface. In-progress stages keep the phone behavior so a running install is not cancelled.
+ */
+private fun dismissTvInstaller(viewModel: InstallerViewModel) {
+    val uiState = viewModel.uiState.value
+    if (!uiState.isDismissible) return
+    when (uiState.stage) {
+        is InstallerStage.Preparing,
+        is InstallerStage.Installing,
+        is InstallerStage.InstallWaitingUnknownSource,
+        -> dismissInstallerDialog(viewModel)
+
+        else -> viewModel.dispatch(InstallerViewAction.Close)
     }
 }
 
@@ -210,27 +218,5 @@ private fun TvStageLayout(params: DialogParams) {
     }
 }
 
-/**
- * Raises the focused-state alpha of Material 3 ripples so focus on reused phone components (chips,
- * switches, list rows) stays visible at TV viewing distance.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TvFocusVisibleContent(content: @Composable () -> Unit) {
-    CompositionLocalProvider(
-        LocalRippleConfiguration provides RippleConfiguration(
-            color = MaterialTheme.colorScheme.primary,
-            rippleAlpha = RippleAlpha(
-                draggedAlpha = 0.16f,
-                focusedAlpha = 0.32f,
-                hoveredAlpha = 0.08f,
-                pressedAlpha = 0.24f,
-            ),
-        ),
-        content = content,
-    )
-}
-
 private const val IdentityScale = 1.3f
 private val BodyShape = RoundedCornerShape(20.dp)
-private val TvSafeArea = PaddingValues(horizontal = 48.dp, vertical = 27.dp)

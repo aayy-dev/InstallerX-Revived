@@ -306,6 +306,7 @@
     <string name="config_smart_authorizer_fallback_list">Fallback authorizer list</string>
     <string name="config_smart_authorizer_fallback_list_desc">Select and sort fallback authorizers.\nSelected authorization order: %1$s</string>
     <string name="config_smart_authorizer_fallback_list_tip">Select at least one item. Drag to sort.</string>
+    <string name="config_smart_authorizer_fallback_list_tip_tv">Select at least one item. Use the arrows to sort.</string>
     <string name="config_smart_authorizer_must_choose_one">Must select one!</string>
     <string name="config_authorizer">Authorizer</string>
     <string name="config_install_authorizer_desc">Authorizer to install apps</string>
@@ -1042,4 +1043,6 @@
     <string name="network_app_name_resources">APK resources</string>
     <string name="network_app_name_server_desc">Use the server filename for faster analysis.</string>
     <string name="network_app_name_resources_desc">Read the app name from APK resources. Analysis may be slower.</string>
+    <string name="move_item_up">Move up</string>
+    <string name="move_item_down">Move down</string>
 </resources>

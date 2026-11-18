@@ -11,10 +11,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,9 +27,13 @@ import com.rosan.installer.domain.settings.provider.ThemeStateProvider
 import com.rosan.installer.framework.packageupdate.SelfUpdateRecoveryManager
 import com.rosan.installer.ui.navigation.InstallerNavContainer
 import com.rosan.installer.ui.page.miuix.widgets.InstallerMiuixComponentHost
+import com.rosan.installer.ui.page.tv.TvFocusEnvironment
+import com.rosan.installer.ui.page.tv.TvSafeArea
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.LocalWindowLayoutInfo
+import com.rosan.installer.ui.theme.isTelevision
 import com.rosan.installer.ui.theme.rememberWindowLayoutInfo
+import com.rosan.installer.ui.theme.tv.InstallerTvTheme
 import com.rosan.installer.util.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -64,9 +70,17 @@ class SettingsActivity :
 
         super.onCreate(savedInstanceState)
         showSelfUpdateSuccess()
+        val isTelevision = this.isTelevision
         setContent {
-            val uiState by themeStateProvider.themeStateFlow.collectAsStateWithLifecycle(initialValue = ThemeState())
-            isThemeLoaded = uiState.isLoaded
+            val storedThemeState by themeStateProvider.themeStateFlow.collectAsStateWithLifecycle(initialValue = ThemeState())
+            isThemeLoaded = storedThemeState.isLoaded
+            // The TV layout is built from Material 3 pages; Miuix, blur and the floating bar are not
+            // usable with a remote.
+            val uiState = if (isTelevision) {
+                storedThemeState.copy(useMiuix = false, useMiuixOs4 = false, useBlur = false, useAppleFloatingBar = false)
+            } else {
+                storedThemeState
+            }
 
             // Prevent heavy navigation setup until state is ready
             if (!isThemeLoaded) return@setContent
@@ -109,7 +123,18 @@ class SettingsActivity :
                                 .background(backgroundColor)
                                 .then(scope.pageBackdropModifier),
                         ) {
-                            InstallerNavContainer(uiState)
+                            if (isTelevision) {
+                                InstallerTvTheme(colorScheme = MaterialTheme.colorScheme, isDark = InstallerTheme.isDark) {
+                                    TvFocusEnvironment {
+                                        // Clip so page transitions do not slide into the overscan margin.
+                                        Box(modifier = Modifier.padding(TvSafeArea).clipToBounds()) {
+                                            InstallerNavContainer(uiState)
+                                        }
+                                    }
+                                }
+                            } else {
+                                InstallerNavContainer(uiState)
+                            }
                         }
                     }
                 }

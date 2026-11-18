@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,8 @@ import com.rosan.installer.ui.page.miuix.settings.preferred.lab.MiuixLabPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.network.MiuixNetworkPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.theme.MiuixThemeSettingsPage
 import com.rosan.installer.ui.page.miuix.settings.preferred.uninstaller.MiuixUninstallerGlobalSettingsPage
+import com.rosan.installer.ui.page.tv.settings.TvMainPageWrapper
+import com.rosan.installer.ui.theme.isTelevision
 import com.rosan.installer.ui.util.rememberDeviceCornerRadius
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.nav.core.NavCornerClipMode
@@ -61,6 +64,8 @@ fun InstallerNavContainer(uiState: ThemeState) {
         viewModelStoreOwner = LocalActivity.current as ComponentActivity,
     )
 
+    val context = LocalContext.current
+    val isTelevision = remember(context) { context.isTelevision }
     val backStack = rememberNavBackStack<Route>(Route.Main)
     val navigator = remember(backStack) { Navigator(backStack) }
     val onBack = remember(navigator) { { navigator.pop() } }
@@ -109,10 +114,10 @@ fun InstallerNavContainer(uiState: ThemeState) {
         ) {
             entry<Route.Main> {
                 InstallerNavEntry(interceptPredictiveBack, onBack) {
-                    if (uiState.useMiuix) {
-                        MiuixMainPageWrapper(uiState, sharedViewModel)
-                    } else {
-                        Material3MainPageWrapper(uiState, sharedViewModel)
+                    when {
+                        isTelevision -> TvMainPageWrapper(sharedViewModel)
+                        uiState.useMiuix -> MiuixMainPageWrapper(uiState, sharedViewModel)
+                        else -> Material3MainPageWrapper(uiState, sharedViewModel)
                     }
                 }
             }

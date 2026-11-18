@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 
@@ -24,6 +25,12 @@ data class WindowLayoutInfo(
     val showNavigationRail: Boolean,
     val isMediumPortrait: Boolean,
 )
+
+/**
+ * True inside the remote-driven TV layouts. Shared widgets use it to offer button alternatives to
+ * touch-only gestures.
+ */
+val LocalTvLayout = staticCompositionLocalOf { false }
 
 // Global provider for layout state
 val LocalWindowLayoutInfo = compositionLocalOf<WindowLayoutInfo> {

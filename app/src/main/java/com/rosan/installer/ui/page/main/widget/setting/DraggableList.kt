@@ -11,12 +11,16 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
@@ -30,16 +34,28 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.rosan.installer.R
+import com.rosan.installer.ui.theme.LocalTvLayout
 
 /**
  * A draggable list widget that supports item reordering.
@@ -107,6 +123,17 @@ fun <T> DraggableList(
                 (draggedIndex!! + shift).coerceIn(0, localItems.lastIndex)
             }
         }
+    }
+
+    // Remotes cannot long-press drag, so the TV layout reorders with per-row move buttons.
+    val showMoveButtons = LocalTvLayout.current
+    val focusManager = LocalFocusManager.current
+    val moveItem: (Int, Int) -> Unit = { from, to ->
+        val newList = localItems.toMutableList()
+        newList.add(to, newList.removeAt(from))
+        localItems = newList
+        isWaitingForUpdate = true
+        onMove(from, to)
     }
 
     Column(modifier = modifier.padding(bottom = 8.dp)) {
@@ -180,6 +207,9 @@ fun <T> DraggableList(
                         val icon = itemLeadingIcon?.invoke(item) ?: leadingIcon
                         val isDragged = index == draggedIndex
                         val interactionSource = remember { MutableInteractionSource() }
+                        var rowFocused by remember { mutableStateOf(false) }
+                        val moveUpFocusRequester = remember { FocusRequester() }
+                        val moveDownFocusRequester = remember { FocusRequester() }
 
                         var dragInteraction by remember { mutableStateOf<DragInteraction.Start?>(null) }
                         LaunchedEffect(isDragged) {
@@ -234,13 +264,69 @@ fun <T> DraggableList(
                                 elevation = ListItemDefaults.elevation(0.dp, 6.dp),
                                 interactionSource = interactionSource,
                                 modifier = Modifier
+                                    .then(
+                                        if (showMoveButtons) {
+                                            // Directional focus search skips a focused row's own children,
+                                            // so Right enters the row's trailing controls explicitly.
+                                            Modifier
+                                                .onFocusChanged { rowFocused = it.isFocused }
+                                                .onPreviewKeyEvent { event ->
+                                                    rowFocused &&
+                                                        event.type == KeyEventType.KeyDown &&
+                                                        event.key == Key.DirectionRight &&
+                                                        focusManager.moveFocus(FocusDirection.Enter)
+                                                }
+                                        } else {
+                                            Modifier
+                                        },
+                                    )
                                     .onGloballyPositioned { if (itemHeightPx == 0f) itemHeightPx = it.size.height.toFloat() }
                                     .zIndex(if (isDragged || finalTranslationY != 0f) 10f else 0f)
                                     .graphicsLayer { this.translationY = finalTranslationY },
                                 content = { Text(itemName(item)) },
                                 supportingContent = { Text(itemDescription(item)) },
                                 leadingContent = icon?.let { imageVector -> { Icon(imageVector, null) } },
-                                trailingContent = { trailingContent?.invoke(item) },
+                                trailingContent = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = if (showMoveButtons) {
+                                            // Left past the first control returns focus to the row.
+                                            Modifier.onPreviewKeyEvent { event ->
+                                                event.type == KeyEventType.KeyDown &&
+                                                    event.key == Key.DirectionLeft &&
+                                                    (focusManager.moveFocus(FocusDirection.Left) || focusManager.moveFocus(FocusDirection.Exit))
+                                            }
+                                        } else {
+                                            Modifier
+                                        },
+                                    ) {
+                                        trailingContent?.invoke(item)
+                                        if (showMoveButtons) {
+                                            // At either end the pressed arrow disables itself; hand focus to the
+                                            // other arrow first so the remote does not lose focus.
+                                            IconButton(
+                                                onClick = {
+                                                    if (index - 1 == 0) moveDownFocusRequester.requestFocus()
+                                                    moveItem(index, index - 1)
+                                                },
+                                                enabled = index > 0,
+                                                modifier = Modifier.focusRequester(moveUpFocusRequester),
+                                            ) {
+                                                Icon(Icons.Rounded.KeyboardArrowUp, stringResource(R.string.move_item_up))
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    if (index + 1 == localItems.lastIndex) moveUpFocusRequester.requestFocus()
+                                                    moveItem(index, index + 1)
+                                                },
+                                                enabled = index < localItems.lastIndex,
+                                                modifier = Modifier.focusRequester(moveDownFocusRequester),
+                                            ) {
+                                                Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.move_item_down))
+                                            }
+                                        }
+                                    }
+                                },
                             )
                         }
                     }

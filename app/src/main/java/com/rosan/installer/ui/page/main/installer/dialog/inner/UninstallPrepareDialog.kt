@@ -123,8 +123,9 @@ fun uninstallReadyDialog(viewModel: InstallerViewModel): DialogParams {
                 DialogButton(stringResource(if (isArchived) R.string.uninstall_archive else R.string.uninstall)) {
                     viewModel.dispatch(InstallerViewAction.Uninstall)
                 },
-                // Cancel button closes the dialog.
-                DialogButton(stringResource(R.string.cancel)) {
+                // Cancel button closes the dialog. Focused by default so a stray OK press on a
+                // remote cannot uninstall.
+                DialogButton(stringResource(R.string.cancel), isDefaultFocus = true) {
                     viewModel.dispatch(InstallerViewAction.Close)
                 },
             )

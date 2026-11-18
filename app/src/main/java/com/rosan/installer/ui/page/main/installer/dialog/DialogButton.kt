@@ -6,8 +6,8 @@ data class DialogButton(
     val text: String,
     val weight: Float = 1f,
     val enabled: Boolean = true,
-    /** Marks the stage's main action, which remote-driven UIs focus first. */
-    val isPrimary: Boolean = false,
+    /** The button remote-driven UIs focus when the stage opens; the first enabled one if none. */
+    val isDefaultFocus: Boolean = false,
     val onLongClick: (() -> Unit)? = null,
     val onClick: () -> Unit,
 )

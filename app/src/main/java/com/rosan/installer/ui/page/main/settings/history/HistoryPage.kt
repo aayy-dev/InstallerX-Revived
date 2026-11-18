@@ -3,6 +3,7 @@
 package com.rosan.installer.ui.page.main.settings.history
 
 import android.content.ClipData
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CheckableDropdownMenuItem
@@ -70,6 +72,7 @@ import com.rosan.installer.domain.settings.model.config.Authorizer
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.widget.chip.CapsuleTag
 import com.rosan.installer.ui.page.main.widget.menu.GroupedDropdownMenuPopup
+import com.rosan.installer.ui.theme.LocalTvLayout
 import com.rosan.installer.ui.theme.bottomShape
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
 import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
@@ -350,6 +353,7 @@ private fun HistoryPageContent(
             modifier = Modifier.statusBarsPadding(),
             onDismissRequest = { selectedRecord = null },
             sheetState = sheetState,
+            dragHandle = if (LocalTvLayout.current) null else ({ BottomSheetDefaults.DragHandle() }),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentWindowInsets = {
                 WindowInsets(
@@ -586,22 +590,28 @@ private fun HistoryInfoLine(
     val clipboard = LocalClipboard.current
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val copyValue = {
+        coroutineScope.launch {
+            clipboard.setClipEntry(
+                ClipData.newPlainText(title, value).toClipEntry(),
+            )
+        }
+        context.toast(R.string.copied_format, value)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .pointerInput(value) {
-                detectTapGestures(
-                    onLongPress = {
-                        coroutineScope.launch {
-                            clipboard.setClipEntry(
-                                ClipData.newPlainText(title, value).toClipEntry(),
-                            )
-                        }
-                        context.toast(R.string.copied_format, value)
-                    },
-                )
-            },
+            .then(
+                if (LocalTvLayout.current) {
+                    // Remotes cannot long-press a touch target; focusable rows also let the sheet scroll.
+                    Modifier.clickable(onClick = copyValue)
+                } else {
+                    Modifier.pointerInput(value) {
+                        detectTapGestures(onLongPress = { copyValue() })
+                    }
+                },
+            ),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(

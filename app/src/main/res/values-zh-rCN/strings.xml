@@ -299,6 +299,7 @@
     <string name="config_smart_authorizer_fallback_list">回退特权列表</string>
     <string name="config_smart_authorizer_fallback_list_desc">对回退的授权方式进行选择和排序。\n选中的授权顺序：%1$s</string>
     <string name="config_smart_authorizer_fallback_list_tip">至少选择一项，拖动可以排序</string>
+    <string name="config_smart_authorizer_fallback_list_tip_tv">至少选择一项，使用箭头可以排序</string>
     <string name="config_smart_authorizer_must_choose_one">必须选择一个！</string>
     <string name="config_authorizer">授权方式</string>
     <string name="config_install_authorizer_desc">用于安装应用的授权方式</string>
@@ -1022,4 +1023,6 @@
     <string name="network_app_name_resources">解析 APK 资源</string>
     <string name="network_app_name_server_desc">使用服务器文件名，分析更快。</string>
     <string name="network_app_name_resources_desc">从 APK 资源读取应用名称，分析可能较慢。</string>
+    <string name="move_item_up">上移</string>
+    <string name="move_item_down">下移</string>
 </resources>
