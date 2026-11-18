@@ -123,25 +123,7 @@ fun DialogPage(session: InstallerSessionRepository, viewModel: InstallerViewMode
 
                 PositionDialog(
                     useBlur = useBlur,
-                    onDismissRequest = {
-                        val currentUiState = viewModel.uiState.value
-                        val currentStage = currentUiState.stage
-
-                        if (currentUiState.isDismissible) {
-                            // If we are in the confirmation stage and the user taps outside (scrim) or swipes back
-                            if (currentStage is InstallerStage.InstallConfirm) {
-                                viewModel.dispatch(InstallerViewAction.ApproveSession(currentStage.sessionId, false))
-                                return@PositionDialog
-                            }
-
-                            // Normal dismissal logic for other stages
-                            if (currentUiState.viewSettings.disableNotificationOnDismiss) {
-                                viewModel.dispatch(InstallerViewAction.Close)
-                            } else {
-                                viewModel.dispatch(InstallerViewAction.Background)
-                            }
-                        }
-                    },
+                    onDismissRequest = { dismissInstallerDialog(viewModel) },
                     centerIcon = dialogInnerWidget(params.icon),
                     centerTitle = dialogInnerWidget(params.title),
                     centerSubtitle = dialogInnerWidget(params.subtitle),
@@ -151,5 +133,26 @@ fun DialogPage(session: InstallerSessionRepository, viewModel: InstallerViewMode
                 )
             }
         }
+    }
+}
+
+/**
+ * Handles a user dismissal (scrim tap, back) of the installer dialog for the current stage.
+ */
+internal fun dismissInstallerDialog(viewModel: InstallerViewModel) {
+    val currentUiState = viewModel.uiState.value
+    if (!currentUiState.isDismissible) return
+
+    // Dismissing the confirmation stage rejects the pending session.
+    val currentStage = currentUiState.stage
+    if (currentStage is InstallerStage.InstallConfirm) {
+        viewModel.dispatch(InstallerViewAction.ApproveSession(currentStage.sessionId, false))
+        return
+    }
+
+    if (currentUiState.viewSettings.disableNotificationOnDismiss) {
+        viewModel.dispatch(InstallerViewAction.Close)
+    } else {
+        viewModel.dispatch(InstallerViewAction.Background)
     }
 }

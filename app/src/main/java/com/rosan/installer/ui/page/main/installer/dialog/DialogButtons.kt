@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -32,9 +33,24 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
+/**
+ * Lets a host UI (the TV installer) render the stage's buttons with its own components.
+ */
+val LocalDialogButtonsRenderer = staticCompositionLocalOf<(@Composable (List<DialogButton>) -> Unit)?> { null }
+
 @Composable
 fun dialogButtons(id: String, content: (@Composable () -> List<DialogButton>)) = DialogInnerParams(id) {
     val buttons = content.invoke()
+    val renderer = LocalDialogButtonsRenderer.current
+    if (renderer != null) {
+        renderer(buttons)
+    } else {
+        DefaultDialogButtons(buttons)
+    }
+}
+
+@Composable
+private fun DefaultDialogButtons(buttons: List<DialogButton>) {
     Column(
         modifier = Modifier.clip(RoundedCornerShape(12.dp)),
         verticalArrangement = Arrangement.spacedBy(4.dp),

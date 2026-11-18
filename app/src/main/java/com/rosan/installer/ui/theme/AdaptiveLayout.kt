@@ -3,6 +3,7 @@
 package com.rosan.installer.ui.theme
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -30,10 +31,18 @@ val LocalWindowLayoutInfo = compositionLocalOf<WindowLayoutInfo> {
 }
 
 /**
- * Detects if the device is a phone (smallest width < 600dp)
+ * Detects an Android TV / Google TV device, which is driven by a D-pad remote instead of touch.
+ */
+val Context.isTelevision: Boolean
+    get() = (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION ||
+        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
+/**
+ * Detects if the device is a phone (smallest width < 600dp).
+ * TVs are excluded: a 1080p TV reports a smallest width of 540dp.
  */
 val Context.isPhoneDevice: Boolean
-    get() = resources.configuration.smallestScreenWidthDp < 600
+    get() = !isTelevision && resources.configuration.smallestScreenWidthDp < 600
 
 /**
  * Gets the WindowLayoutType for the current configuration

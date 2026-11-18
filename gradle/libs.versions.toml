@@ -18,6 +18,7 @@ composeBom = "2026.09.00"
 compose = "1.12.1"
 splashScreen = "1.2.0"
 material3 = "1.5.0-rc01"
+tvMaterial = "1.1.0"
 room = "3.0.3"
 ktx-serialization = "1.13.0"
 rikka-shizuku = "13.1.5"
@@ -84,6 +85,7 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = 
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
 androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
 
 compose-materialIcons = { group = "androidx.compose.material", name = "material-icons-extended", version = "1.7.8" }

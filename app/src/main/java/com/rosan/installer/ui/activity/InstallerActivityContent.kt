@@ -16,8 +16,10 @@ import com.rosan.installer.domain.settings.model.preferences.ThemeState
 import com.rosan.installer.domain.settings.provider.ThemeStateProvider
 import com.rosan.installer.ui.page.main.installer.InstallerPage
 import com.rosan.installer.ui.page.miuix.installer.MiuixInstallerPage
+import com.rosan.installer.ui.page.tv.installer.TvInstallerPage
 import com.rosan.installer.ui.theme.InstallerTheme
 import com.rosan.installer.ui.theme.isPhoneDevice
+import com.rosan.installer.ui.theme.isTelevision
 import com.rosan.installer.ui.util.requestPortraitOrientationOnPhoneSafely
 import org.koin.compose.koinInject
 
@@ -28,12 +30,15 @@ fun InstallerActivityContent(session: InstallerSessionRepository, themeStateProv
 
     val context = LocalContext.current
     val isPhone = context.isPhoneDevice
+    val isTelevision = context.isTelevision
+    // The TV installer reuses Material 3 stage content, so it always runs on the Material theme.
+    val useMiuix = uiState.useMiuix && !isTelevision
     LaunchedEffect(context, isPhone) {
         (context as? Activity)?.requestPortraitOrientationOnPhoneSafely(isPhone)
     }
 
     InstallerTheme(
-        useMiuix = uiState.useMiuix,
+        useMiuix = useMiuix,
         useMiuixOs4 = false, // Do not use OS4 style in installation
         themeMode = uiState.themeMode,
         paletteStyle = uiState.paletteStyle,
@@ -43,10 +48,10 @@ fun InstallerActivityContent(session: InstallerSessionRepository, themeStateProv
         seedColor = androidx.compose.ui.graphics.Color(uiState.seedColor),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (uiState.useMiuix) {
-                MiuixInstallerPage(session)
-            } else {
-                InstallerPage(session)
+            when {
+                isTelevision -> TvInstallerPage(session)
+                useMiuix -> MiuixInstallerPage(session)
+                else -> InstallerPage(session)
             }
         }
     }

@@ -6,6 +6,8 @@ data class DialogButton(
     val text: String,
     val weight: Float = 1f,
     val enabled: Boolean = true,
+    /** Marks the stage's main action, which remote-driven UIs focus first. */
+    val isPrimary: Boolean = false,
     val onLongClick: (() -> Unit)? = null,
     val onClick: () -> Unit,
 )

@@ -514,6 +514,7 @@ fun installPrepareDialog(viewModel: InstallerViewModel): DialogParams {
                         DialogButton(
                             text = stringResource(buttonTextId),
                             weight = 1f,
+                            isPrimary = true,
                             onLongClick = if (settings.longClickBackgroundInstall) {
                                 {
                                     // Trigger install directly

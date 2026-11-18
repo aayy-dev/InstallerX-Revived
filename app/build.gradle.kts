@@ -219,6 +219,7 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
     // implementation(libs.androidx.navigation3.runtime)
