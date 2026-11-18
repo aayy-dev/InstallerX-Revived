@@ -37,7 +37,32 @@ fun Material3MainPageWrapper(uiState: ThemeState, sharedViewModel: SettingsShare
     val configRepo = koinInject<ConfigRepository>()
     val configCountFlow = remember { configRepo.flowAll().map { it.size } }
     val configCount by configCountFlow.collectAsStateWithLifecycle(initialValue = 0)
-    val tabs = rememberSettingsNavigationTabs()
+    val homeLabel = stringResource(id = R.string.home)
+    val homeIcon = ImageVector.vectorResource(R.drawable.ic_tile_icon)
+    val configLabel = stringResource(R.string.config)
+    val historyLabel = stringResource(R.string.history)
+    val preferredLabel = stringResource(R.string.preferred)
+
+    val tabs = remember(homeLabel, configLabel, historyLabel, preferredLabel) {
+        listOf(
+            NavigationTab(
+                icon = homeIcon,
+                label = homeLabel,
+            ),
+            NavigationTab(
+                icon = AppIcons.RoomPreferences,
+                label = configLabel,
+            ),
+            NavigationTab(
+                icon = AppIcons.History,
+                label = historyLabel,
+            ),
+            NavigationTab(
+                icon = AppIcons.SettingsSuggest,
+                label = preferredLabel,
+            ),
+        )
+    }
 
     val pagerState = rememberPagerState(
         initialPage = sharedState.lastMainPageIndex,
@@ -82,39 +107,6 @@ fun Material3MainPageWrapper(uiState: ThemeState, sharedViewModel: SettingsShare
             useFloatingBottomBar = useFloatingBottomBar,
             backdrop = backdrop,
             isMedium = isMedium,
-        )
-    }
-}
-
-/**
- * The main settings tabs (Home, Profiles, History, Preferences), shared by every main page layout.
- */
-@Composable
-fun rememberSettingsNavigationTabs(): List<NavigationTab> {
-    val homeLabel = stringResource(id = R.string.home)
-    val homeIcon = ImageVector.vectorResource(R.drawable.ic_tile_icon)
-    val configLabel = stringResource(R.string.config)
-    val historyLabel = stringResource(R.string.history)
-    val preferredLabel = stringResource(R.string.preferred)
-
-    return remember(homeLabel, configLabel, historyLabel, preferredLabel) {
-        listOf(
-            NavigationTab(
-                icon = homeIcon,
-                label = homeLabel,
-            ),
-            NavigationTab(
-                icon = AppIcons.RoomPreferences,
-                label = configLabel,
-            ),
-            NavigationTab(
-                icon = AppIcons.History,
-                label = historyLabel,
-            ),
-            NavigationTab(
-                icon = AppIcons.SettingsSuggest,
-                label = preferredLabel,
-            ),
         )
     }
 }
