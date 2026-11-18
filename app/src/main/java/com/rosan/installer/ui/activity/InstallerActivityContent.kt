@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.rosan.installer.domain.session.repository.InstallerSessionRepository
 import com.rosan.installer.domain.settings.model.preferences.ThemeState
+import com.rosan.installer.domain.settings.model.preferences.theme.ThemeMode
 import com.rosan.installer.domain.settings.provider.ThemeStateProvider
 import com.rosan.installer.ui.page.main.installer.InstallerPage
 import com.rosan.installer.ui.page.miuix.installer.MiuixInstallerPage
@@ -41,7 +42,7 @@ fun InstallerActivityContent(session: InstallerSessionRepository, themeStateProv
     InstallerTheme(
         useMiuix = useMiuix,
         useMiuixOs4 = false, // Do not use OS4 style in installation
-        themeMode = uiState.themeMode,
+        themeMode = if (isTelevision) ThemeMode.DARK else uiState.themeMode,
         paletteStyle = uiState.paletteStyle,
         colorSpec = uiState.colorSpec,
         useDynamicColor = uiState.useDynamicColor,

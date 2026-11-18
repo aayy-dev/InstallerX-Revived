@@ -57,7 +57,6 @@ import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.page.main.widget.snackbar.SwipeableSnackbarHost
 import com.rosan.installer.ui.page.main.widget.util.OnLifecycleEvent
-import com.rosan.installer.ui.theme.LocalTvLayout
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
 import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
@@ -100,7 +99,6 @@ fun PreferredPage(
     var pendingRestorePreview by remember { mutableStateOf<BackupRestorePreview?>(null) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showHideLauncherIconDialog by remember { mutableStateOf(false) }
-    val isTvLayout = LocalTvLayout.current
     var backupValidationErrorText by remember { mutableStateOf<String?>(null) }
 
     val detailLabel = stringResource(id = R.string.details)
@@ -314,24 +312,20 @@ fun PreferredPage(
                             enabled = enabled,
                         ) { viewModel.dispatch(PreferredViewAction.RequestIgnoreBatteryOptimization) }
                     }
-                    // The launcher alias is the only TV launcher entry, so on TV only offer this
-                    // switch to bring a hidden icon back.
-                    if (!isTvLayout || !uiState.showLauncherIcon) {
-                        item {
-                            SwitchWidget(
-                                icon = AppIcons.Launcher,
-                                title = stringResource(R.string.theme_settings_hide_launcher_icon),
-                                description = stringResource(R.string.theme_settings_hide_launcher_icon_desc),
-                                checked = !uiState.showLauncherIcon,
-                                onCheckedChange = { newCheckedState ->
-                                    if (newCheckedState) {
-                                        showHideLauncherIconDialog = true
-                                    } else {
-                                        viewModel.dispatch(PreferredViewAction.ChangeShowLauncherIcon(true))
-                                    }
-                                },
-                            )
-                        }
+                    item {
+                        SwitchWidget(
+                            icon = AppIcons.Launcher,
+                            title = stringResource(R.string.theme_settings_hide_launcher_icon),
+                            description = stringResource(R.string.theme_settings_hide_launcher_icon_desc),
+                            checked = !uiState.showLauncherIcon,
+                            onCheckedChange = { newCheckedState ->
+                                if (newCheckedState) {
+                                    showHideLauncherIconDialog = true
+                                } else {
+                                    viewModel.dispatch(PreferredViewAction.ChangeShowLauncherIcon(true))
+                                }
+                            },
+                        )
                     }
                 }
             }

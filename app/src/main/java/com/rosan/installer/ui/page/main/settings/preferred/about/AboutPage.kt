@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -25,7 +24,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -58,7 +56,6 @@ import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
 import com.rosan.installer.ui.page.main.widget.setting.UpdateLoadingIndicator
 import com.rosan.installer.ui.page.main.widget.util.LogEventCollector
-import com.rosan.installer.ui.theme.LocalTvLayout
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
 import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.rememberMaterial3BlurBackdrop
@@ -198,12 +195,7 @@ fun AboutPage(useBlur: Boolean, viewModel: AboutViewModel = koinViewModel()) {
         }
     }
     if (showBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showBottomSheet = false },
-            // On TV, open fully so the remote can reach every row, and drop the drag handle.
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = LocalTvLayout.current),
-            dragHandle = if (LocalTvLayout.current) null else ({ BottomSheetDefaults.DragHandle() }),
-        ) {
+        ModalBottomSheet(onDismissRequest = { showBottomSheet = false }) {
             WindowNavigationEventBridge()
             BottomSheetContent(
                 title = stringResource(R.string.get_update),

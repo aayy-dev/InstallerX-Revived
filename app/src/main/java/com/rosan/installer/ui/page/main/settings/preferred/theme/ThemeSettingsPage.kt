@@ -71,7 +71,6 @@ import com.rosan.installer.ui.page.main.widget.setting.ExpressiveBackButton
 import com.rosan.installer.ui.page.main.widget.setting.RadioButtonWidget
 import com.rosan.installer.ui.page.main.widget.setting.SegmentedColumn
 import com.rosan.installer.ui.page.main.widget.setting.SwitchWidget
-import com.rosan.installer.ui.theme.LocalTvLayout
 import com.rosan.installer.ui.theme.getMaterial3AppBarColor
 import com.rosan.installer.ui.theme.installerMaterial3BlurEffect
 import com.rosan.installer.ui.theme.material.PresetColors
@@ -137,8 +136,7 @@ fun ThemeSettingsPage(viewModel: ThemeSettingsViewModel = koinViewModel()) {
         )
     }
 
-    val isTvLayout = LocalTvLayout.current
-    val backdrop = rememberMaterial3BlurBackdrop(uiState.useBlur && !isTvLayout)
+    val backdrop = rememberMaterial3BlurBackdrop(uiState.useBlur)
 
     Scaffold(
         modifier = Modifier
@@ -174,56 +172,53 @@ fun ThemeSettingsPage(viewModel: ThemeSettingsViewModel = koinViewModel()) {
             contentPadding = paddingValues,
         ) {
             // --- Group 1: UI Style Selection ---
-            // TV always uses its own layout, so the UI family and bottom bar choices do not apply there.
-            if (!isTvLayout) {
-                item {
-                    SegmentedColumn(
-                        title = stringResource(R.string.theme_settings_ui_style),
-                    ) {
-                        // Option 1: Google UI
-                        item {
-                            val selected = !uiState.showMiuixUI
-                            val onClick = {
-                                if (uiState.showMiuixUI) {
-                                    viewModel.dispatch(ThemeSettingsAction.ChangeUseMiuix(false))
-                                }
+            item {
+                SegmentedColumn(
+                    title = stringResource(R.string.theme_settings_ui_style),
+                ) {
+                    // Option 1: Google UI
+                    item {
+                        val selected = !uiState.showMiuixUI
+                        val onClick = {
+                            if (uiState.showMiuixUI) {
+                                viewModel.dispatch(ThemeSettingsAction.ChangeUseMiuix(false))
                             }
-                            RadioButtonWidget(
-                                title = stringResource(R.string.theme_settings_google_ui),
-                                description = stringResource(R.string.theme_settings_google_ui_desc),
-                                iconPlaceholder = false,
-                                selected = selected,
-                                onClick = onClick,
-                            )
                         }
-                        // Option 2: MIUIX UI
-                        item {
-                            val selected = uiState.showMiuixUI
-                            val onClick = {
-                                if (!uiState.showMiuixUI) {
-                                    viewModel.dispatch(ThemeSettingsAction.ChangeUseMiuix(true))
-                                }
+                        RadioButtonWidget(
+                            title = stringResource(R.string.theme_settings_google_ui),
+                            description = stringResource(R.string.theme_settings_google_ui_desc),
+                            iconPlaceholder = false,
+                            selected = selected,
+                            onClick = onClick,
+                        )
+                    }
+                    // Option 2: MIUIX UI
+                    item {
+                        val selected = uiState.showMiuixUI
+                        val onClick = {
+                            if (!uiState.showMiuixUI) {
+                                viewModel.dispatch(ThemeSettingsAction.ChangeUseMiuix(true))
                             }
-                            RadioButtonWidget(
-                                title = stringResource(R.string.theme_settings_miuix_ui),
-                                description = stringResource(R.string.theme_settings_miuix_ui_desc),
-                                iconPlaceholder = false,
-                                selected = selected,
-                                onClick = onClick,
-                            )
                         }
-                        // Option 3: Floating Bottom Bar
-                        item {
-                            SwitchWidget(
-                                iconPlaceholder = false,
-                                title = stringResource(R.string.theme_settings_use_apple_floating_bar),
-                                description = stringResource(R.string.theme_settings_use_apple_floating_bar_desc),
-                                checked = uiState.useAppleFloatingBar,
-                                onCheckedChange = {
-                                    viewModel.dispatch(ThemeSettingsAction.SetUseAppleFloatingBar(it))
-                                },
-                            )
-                        }
+                        RadioButtonWidget(
+                            title = stringResource(R.string.theme_settings_miuix_ui),
+                            description = stringResource(R.string.theme_settings_miuix_ui_desc),
+                            iconPlaceholder = false,
+                            selected = selected,
+                            onClick = onClick,
+                        )
+                    }
+                    // Option 3: Floating Bottom Bar
+                    item {
+                        SwitchWidget(
+                            iconPlaceholder = false,
+                            title = stringResource(R.string.theme_settings_use_apple_floating_bar),
+                            description = stringResource(R.string.theme_settings_use_apple_floating_bar_desc),
+                            checked = uiState.useAppleFloatingBar,
+                            onCheckedChange = {
+                                viewModel.dispatch(ThemeSettingsAction.SetUseAppleFloatingBar(it))
+                            },
+                        )
                     }
                 }
             }
@@ -233,7 +228,7 @@ fun ThemeSettingsPage(viewModel: ThemeSettingsViewModel = koinViewModel()) {
                 SegmentedColumn(
                     title = stringResource(R.string.theme_settings_google_ui),
                 ) {
-                    if (!isTvLayout && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         item {
                             SwitchWidget(
                                 icon = AppIcons.Blur,
@@ -389,7 +384,7 @@ fun ThemeSettingsPage(viewModel: ThemeSettingsViewModel = koinViewModel()) {
             }
 
             // --- Group 4: Predictive Back ---
-            if (!isTvLayout && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 item {
                     SegmentedColumn(
                         title = stringResource(R.string.theme_settings_predictive_back),
