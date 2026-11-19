@@ -315,6 +315,8 @@ fun TvAppHeroScreen(viewModel: InstallerViewModel, stage: InstallerStage, action
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val sectionTopPaddingPx = with(LocalDensity.current) { 48.dp.roundToPx() }
+    val safeHorizontalPx = with(LocalDensity.current) { TvKit.SafeHorizontal.toPx() }
+    val cardScrollSpec = remember(safeHorizontalPx) { KeepVisibleBringIntoViewSpec(margin = safeHorizontalPx) }
     fun showSection(index: Int) {
         scope.launch {
             // The details only move the page when they do not already fit below the header.
@@ -443,7 +445,7 @@ fun TvAppHeroScreen(viewModel: InstallerViewModel, stage: InstallerStage, action
                             )
                             Spacer(Modifier.height(16.dp))
                             // Runs to the screen edge so the next card peeks in, as on the store's rows.
-                            CompositionLocalProvider(LocalBringIntoViewSpec provides KeepVisibleBringIntoViewSpec) {
+                            CompositionLocalProvider(LocalBringIntoViewSpec provides cardScrollSpec) {
                                 LazyRow(
                                     modifier = Modifier.focusRestorer(),
                                     horizontalArrangement = Arrangement.spacedBy(20.dp),
@@ -472,15 +474,21 @@ private val NoScrollBringIntoViewSpec = object : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = 0f
 }
 
-/** Scrolls the minimum needed to show a focused child, and not at all when it is already visible. */
+/**
+ * Scrolls the minimum needed to show a focused child inside the container less [margin] at each end,
+ * and not at all when it is already there. The margin keeps a focused card (which grows slightly)
+ * and its border clear of the screen edge.
+ */
 @OptIn(ExperimentalFoundationApi::class)
-private val KeepVisibleBringIntoViewSpec = object : BringIntoViewSpec {
+private class KeepVisibleBringIntoViewSpec(private val margin: Float) : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+        val start = margin
+        val end = containerSize - margin
         val trailingEdge = offset + size
         return when {
-            offset >= 0f && trailingEdge <= containerSize -> 0f
-            offset < 0f || size > containerSize -> offset
-            else -> trailingEdge - containerSize
+            offset >= start && trailingEdge <= end -> 0f
+            offset < start || size > end - start -> offset - start
+            else -> trailingEdge - end
         }
     }
 }

@@ -257,7 +257,9 @@ class TvSettingsListScope internal constructor(
                 summary = value.ifBlank { placeholder },
                 icon = icon,
                 enabled = enabled,
-                modifier = focusFor(key),
+                modifier = focusFor(key).openOnRight(enabled) {
+                    onOpenTextInput(OpenTextInput(title, description, value, placeholder, singleLine, onValueChange))
+                },
                 onFocused = {
                     onRowFocused(key)
                     onPreview(TvPreview(title, description ?: value.ifBlank { placeholder }))
