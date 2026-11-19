@@ -94,6 +94,7 @@ fun TvInstallerSettingsPage(viewModel: InstallerSettingsViewModel = koinViewMode
             title = context.getString(R.string.dialog_settings),
             summary = context.getString(R.string.dialog_settings_desc),
             icon = AppIcons.Dialog,
+            opens = TvSettingsDest.DialogSettings,
             onClick = { navigator.push(TvSettingsDest.DialogSettings) },
         )
         item(
@@ -101,6 +102,7 @@ fun TvInstallerSettingsPage(viewModel: InstallerSettingsViewModel = koinViewMode
             title = context.getString(R.string.notification_settings),
             summary = context.getString(R.string.notification_settings_desc),
             icon = AppIcons.Notification,
+            opens = TvSettingsDest.NotificationSettings,
             onClick = { navigator.push(TvSettingsDest.NotificationSettings) },
         )
         item(
@@ -108,6 +110,7 @@ fun TvInstallerSettingsPage(viewModel: InstallerSettingsViewModel = koinViewMode
             title = context.getString(R.string.authorizer_customization),
             summary = context.getString(R.string.authorizer_customization_desc),
             icon = AppIcons.Authorizer,
+            opens = TvSettingsDest.AuthorizerCust,
             onClick = { navigator.push(TvSettingsDest.AuthorizerCust) },
         )
         if (biometricAvailable) {
@@ -208,6 +211,7 @@ fun TvInstallerSettingsPage(viewModel: InstallerSettingsViewModel = koinViewMode
                 summary = if (kind == ManagedListKind.SharedUidExempted) preview.ifBlank { null } else null,
                 icon = model.icon,
                 description = model.entries.joinToString("\n") { "${it.first}  •  ${it.second}" }.ifBlank { model.emptyText },
+                drillIn = true,
                 onClick = { openList = kind },
             )
         }
@@ -378,6 +382,7 @@ private fun TvManagedListPage(model: ManagedListModel) {
             key = "add",
             title = model.addTitle,
             icon = AppIcons.Add,
+            drillIn = true,
             onClick = { adding = true },
         )
         if (model.entries.isEmpty()) {
@@ -389,6 +394,7 @@ private fun TvManagedListPage(model: ManagedListModel) {
                     title = name,
                     summary = detail,
                     icon = model.icon,
+                    drillIn = true,
                     onClick = { selectedValue = model.entries[index].second },
                 )
             }

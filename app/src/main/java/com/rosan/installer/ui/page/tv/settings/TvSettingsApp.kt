@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rosan.installer.R
+import com.rosan.installer.core.device.model.Level
+import com.rosan.installer.core.env.AppConfig
 import com.rosan.installer.domain.settings.repository.ConfigRepository
 import com.rosan.installer.ui.icons.AppIcons
 import com.rosan.installer.ui.page.main.settings.home.HomePageViewAction
@@ -122,7 +124,7 @@ fun TvSettingsApp() {
 }
 
 @Composable
-private fun TvSettingsDestination(dest: TvSettingsDest) {
+internal fun TvSettingsDestination(dest: TvSettingsDest) {
     when (dest) {
         TvSettingsDest.Root -> TvSettingsRootPage()
         TvSettingsDest.Profiles -> TvProfilesPage()
@@ -177,6 +179,19 @@ private fun TvSettingsRootPage(
         },
     )
 
+    val aboutVersion = stringResource(
+        R.string.app_version_info_format,
+        stringResource(
+            when (AppConfig.LEVEL) {
+                Level.STABLE -> R.string.stable
+                Level.PREVIEW -> R.string.preview
+                Level.UNSTABLE -> R.string.unstable
+            },
+        ),
+        AppConfig.VERSION_NAME,
+        AppConfig.VERSION_CODE,
+    )
+
     TvSettingsPage(title = stringResource(R.string.app_name)) {
         header(context.getString(R.string.home))
         item(
@@ -184,6 +199,7 @@ private fun TvSettingsRootPage(
             title = statusTitle,
             summary = statusDescription,
             icon = if (home.isDefaultInstaller || home.isSystemApp) AppIcons.Active else AppIcons.UnlockDefault,
+            opens = TvSettingsDest.DefaultInstaller,
             onClick = { navigator.push(TvSettingsDest.DefaultInstaller) },
         )
         item(
@@ -191,6 +207,7 @@ private fun TvSettingsRootPage(
             title = context.getString(R.string.home_stat_authorizers),
             summary = home.availableAuthorizerCount.toString(),
             icon = AppIcons.Authorizer,
+            opens = TvSettingsDest.Privileges,
             onClick = { navigator.push(TvSettingsDest.Privileges) },
         )
         item(
@@ -198,12 +215,14 @@ private fun TvSettingsRootPage(
             title = context.getString(R.string.config),
             summary = profileCount.toString(),
             icon = AppIcons.RoomPreferences,
+            opens = TvSettingsDest.Profiles,
             onClick = { navigator.push(TvSettingsDest.Profiles) },
         )
         item(
             key = "history",
             title = context.getString(R.string.history),
             icon = AppIcons.History,
+            opens = TvSettingsDest.History,
             onClick = { navigator.push(TvSettingsDest.History) },
         )
 
@@ -212,18 +231,21 @@ private fun TvSettingsRootPage(
             key = "theme",
             title = context.getString(R.string.theme_settings),
             icon = AppIcons.Theme,
+            opens = TvSettingsDest.Theme,
             onClick = { navigator.push(TvSettingsDest.Theme) },
         )
         item(
             key = "installer",
             title = context.getString(R.string.installer_settings),
             icon = AppIcons.InstallMode,
+            opens = TvSettingsDest.Installer,
             onClick = { navigator.push(TvSettingsDest.Installer) },
         )
         item(
             key = "uninstaller",
             title = context.getString(R.string.uninstaller_settings),
             icon = AppIcons.Delete,
+            opens = TvSettingsDest.Uninstaller,
             onClick = { navigator.push(TvSettingsDest.Uninstaller) },
         )
 
@@ -232,6 +254,7 @@ private fun TvSettingsRootPage(
             key = "network",
             title = context.getString(R.string.network_settings),
             icon = AppIcons.Network,
+            opens = TvSettingsDest.Network,
             onClick = { navigator.push(TvSettingsDest.Network) },
         )
         switch(
@@ -269,12 +292,16 @@ private fun TvSettingsRootPage(
             key = "lab",
             title = context.getString(R.string.lab),
             icon = AppIcons.Lab,
+            opens = TvSettingsDest.Lab,
             onClick = { navigator.push(TvSettingsDest.Lab) },
         )
         item(
             key = "about",
             title = context.getString(R.string.about_detail),
             icon = AppIcons.Info,
+            // About is described rather than drawn: building its page starts an update check.
+            description = aboutVersion,
+            drillIn = true,
             onClick = { navigator.push(TvSettingsDest.About) },
         )
     }

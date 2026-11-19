@@ -23,8 +23,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -103,10 +106,13 @@ fun TvConfirmScreen(
     extra: (@Composable () -> Unit)? = null,
 ) {
     TvBackdrop(accent = accent, modifier = modifier) {
+        // Scrolls when the content is taller than the screen (a long app name plus options), so the
+        // buttons are never squeezed out; focus brings them into view.
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .widthIn(max = 760.dp)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = TvKit.SafeHorizontal, vertical = TvKit.SafeVertical),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -124,6 +130,8 @@ fun TvConfirmScreen(
                 text = title,
                 fontSize = 32.sp,
                 lineHeight = 38.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
             )

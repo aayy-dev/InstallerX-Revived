@@ -162,6 +162,7 @@ fun TvHistoryPage(viewModel: HistoryViewModel = koinViewModel()) {
                             summary,
                         ).joinToString("\n"),
                     ),
+                    drillIn = true,
                     onClick = { selectedRecord = record },
                 )
             }

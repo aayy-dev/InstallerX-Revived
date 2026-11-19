@@ -47,8 +47,7 @@ fun TvUninstallerSettingsPage(viewModel: UninstallerSettingsViewModel = koinView
     TvSettingsPage(title = stringResource(R.string.uninstaller_settings)) {
         info(
             key = "tip",
-            title = context.getString(R.string.uninstaller_settings),
-            summary = context.getString(R.string.uninstall_authorizer_tip),
+            title = context.getString(R.string.uninstall_authorizer_tip),
             icon = AppIcons.Tip,
         )
 

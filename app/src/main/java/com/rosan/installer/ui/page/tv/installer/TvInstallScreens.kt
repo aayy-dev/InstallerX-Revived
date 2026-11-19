@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,15 +37,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -93,6 +98,7 @@ import com.rosan.installer.ui.page.tv.components.rememberInitialFocus
 import com.rosan.installer.ui.page.tv.components.tvFocusedContainer
 import com.rosan.installer.ui.util.rememberErrorSuggestions
 import com.rosan.installer.util.help
+import kotlinx.coroutines.launch
 
 // ---------------------------------------------------------------------------------------------
 // Shared pieces
@@ -303,11 +309,32 @@ fun TvAppHeroScreen(viewModel: InstallerViewModel, stage: InstallerStage, action
     }
     val accent = uiState.seedColor
 
+    // The page scrolls by section, like the store's app pages: the full header while the buttons have
+    // focus, and the buttons with the details below once the cards do. Scrolling only as far as the
+    // focused card would leave the title cut in half at the top edge.
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val sectionTopPaddingPx = with(LocalDensity.current) { 48.dp.roundToPx() }
+    fun showSection(index: Int) {
+        scope.launch {
+            // The details only move the page when they do not already fit below the header.
+            val details = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == DETAILS_KEY }
+            val detailsFit = details != null && details.offset + details.size <= listState.layoutInfo.viewportEndOffset
+            // Offset by the list's top padding so the section starts at the very top, with no
+            // sliver of the header above it.
+            if (index == 0) {
+                listState.animateScrollToItem(0)
+            } else if (!detailsFit) {
+                listState.animateScrollToItem(index, scrollOffset = sectionTopPaddingPx)
+            }
+        }
+    }
+
     TvBackdrop(accent = accent) {
-        // Scroll only when the focused element is off screen, so the title stays visible on open.
-        CompositionLocalProvider(LocalBringIntoViewSpec provides KeepVisibleBringIntoViewSpec) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides NoScrollBringIntoViewSpec) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                state = listState,
                 contentPadding = PaddingValues(vertical = 48.dp),
             ) {
                 item {
@@ -351,7 +378,11 @@ fun TvAppHeroScreen(viewModel: InstallerViewModel, stage: InstallerStage, action
                 }
 
                 item {
-                    Column(Modifier.padding(start = TvKit.SafeHorizontal, end = TvKit.SafeHorizontal, top = 36.dp)) {
+                    Column(
+                        Modifier
+                            .padding(start = TvKit.SafeHorizontal, end = TvKit.SafeHorizontal, top = 36.dp)
+                            .onFocusChanged { if (it.hasFocus) showSection(0) },
+                    ) {
                         when (stage) {
                             is InstallerStage.Installing -> {
                                 val status = if (stage.total > 1) {
@@ -398,8 +429,12 @@ fun TvAppHeroScreen(viewModel: InstallerViewModel, stage: InstallerStage, action
                 }
 
                 if (cards.isNotEmpty()) {
-                    item {
-                        Column(Modifier.padding(top = 44.dp)) {
+                    item(key = DETAILS_KEY) {
+                        Column(
+                            Modifier
+                                .padding(top = 44.dp)
+                                .onFocusChanged { if (it.hasFocus) showSection(1) },
+                        ) {
                             Text(
                                 stringResource(R.string.details),
                                 modifier = Modifier.padding(horizontal = TvKit.SafeHorizontal),
@@ -408,20 +443,33 @@ fun TvAppHeroScreen(viewModel: InstallerViewModel, stage: InstallerStage, action
                             )
                             Spacer(Modifier.height(16.dp))
                             // Runs to the screen edge so the next card peeks in, as on the store's rows.
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                                contentPadding = PaddingValues(horizontal = TvKit.SafeHorizontal, vertical = 8.dp),
-                            ) {
-                                items(cards) { (cardTitle, body, color) ->
-                                    TvInfoCard(title = cardTitle, body = body, accent = color, onClick = { detail = cardTitle to body })
+                            CompositionLocalProvider(LocalBringIntoViewSpec provides KeepVisibleBringIntoViewSpec) {
+                                LazyRow(
+                                    modifier = Modifier.focusRestorer(),
+                                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                                    contentPadding = PaddingValues(horizontal = TvKit.SafeHorizontal, vertical = 8.dp),
+                                ) {
+                                    items(cards) { (cardTitle, body, color) ->
+                                        TvInfoCard(title = cardTitle, body = body, accent = color, onClick = { detail = cardTitle to body })
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                // Room for the button section to scroll to the top when the details need it.
+                item { Spacer(Modifier.fillParentMaxHeight(0.4f)) }
             }
         }
     }
+}
+
+private const val DETAILS_KEY = "details"
+
+/** Leaves scrolling to the page, which moves by whole sections. */
+@OptIn(ExperimentalFoundationApi::class)
+private val NoScrollBringIntoViewSpec = object : BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = 0f
 }
 
 /** Scrolls the minimum needed to show a focused child, and not at all when it is already visible. */

@@ -49,6 +49,7 @@ import com.rosan.installer.ui.page.tv.components.TvConfirmScreen
 import com.rosan.installer.ui.page.tv.components.TvKit
 import com.rosan.installer.ui.page.tv.components.TvRadioRow
 import com.rosan.installer.ui.page.tv.components.TvSwitchRow
+import com.rosan.installer.ui.page.tv.components.inertInPreview
 import com.rosan.installer.ui.page.tv.components.tvFocusedContainer
 import com.rosan.installer.ui.page.tv.components.tvFocusedContent
 import com.rosan.installer.ui.page.tv.settings.TvChoiceOption
@@ -138,7 +139,7 @@ fun TvLabPage(viewModel: LabSettingsViewModel = koinViewModel()) {
     val rootImplementationOptions = rootImplementationNames.map { TvChoiceOption(it) }
 
     TvSettingsPage(title = stringResource(R.string.lab)) {
-        info(key = "lab_tip", title = context.getString(R.string.lab), summary = context.getString(R.string.lab_tip), icon = AppIcons.Tip)
+        info(key = "lab_tip", title = context.getString(R.string.warning), summary = context.getString(R.string.lab_tip), icon = AppIcons.Tip)
 
         header(context.getString(R.string.config_authorizer))
         switch(
@@ -352,6 +353,7 @@ private fun TvMoveButton(icon: ImageVector, contentDescription: String, atEnd: B
     Surface(
         onClick = onClick,
         modifier = Modifier
+            .inertInPreview()
             .size(48.dp)
             .alpha(if (atEnd && !focused) 0.38f else 1f),
         shape = ClickableSurfaceDefaults.shape(shape = TvKit.PillShape),

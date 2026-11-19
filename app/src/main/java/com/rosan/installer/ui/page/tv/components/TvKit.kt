@@ -3,6 +3,7 @@
 package com.rosan.installer.ui.page.tv.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,13 +27,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -128,7 +133,9 @@ fun TvRow(
         onClick = onClick,
         onLongClick = onLongClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .inertInPreview()
+            .fillMaxWidth(),
         shape = ClickableSurfaceDefaults.shape(shape = TvKit.PillShape),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = Color.Transparent,
@@ -250,7 +257,7 @@ fun TvPillButton(
         onClick = onClick,
         onLongClick = onLongClick,
         enabled = enabled,
-        modifier = modifier,
+        modifier = modifier.inertInPreview(),
         shape = ButtonDefaults.shape(shape = TvKit.PillShape),
         scale = ButtonDefaults.scale(focusedScale = 1.06f),
         colors = ButtonDefaults.colors(
@@ -286,18 +293,33 @@ data class TvAction(
 fun TvActionRow(actions: List<TvAction>, modifier: Modifier = Modifier, requestInitialFocus: Boolean = true) {
     val defaultIndex = actions.indexOfFirst { it.isDefault && it.enabled }
         .takeIf { it >= 0 } ?: actions.indexOfFirst { it.enabled }
-    val defaultFocusRequester = remember { FocusRequester() }
+    val requesters = remember(actions.size) { List(actions.size) { FocusRequester() } }
+    var lastFocused by remember { mutableIntStateOf(-1) }
     LaunchedEffect(actions.map { it.text }, actions.any { it.enabled }) {
-        if (requestInitialFocus && defaultIndex >= 0) defaultFocusRequester.requestFocus()
+        if (requestInitialFocus && defaultIndex >= 0) runCatching { requesters[defaultIndex].requestFocus() }
     }
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    // Coming back to the row (from cards or a list) returns to the button used last, or the
+    // default one, rather than whichever button happens to be nearest.
+    Row(
+        modifier = modifier
+            .focusProperties {
+                onEnter = {
+                    val target = lastFocused.takeIf { it in actions.indices && actions[it].enabled } ?: defaultIndex
+                    if (target >= 0) requesters[target].requestFocus()
+                }
+            }
+            .focusGroup(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         actions.forEachIndexed { index, action ->
             TvPillButton(
                 text = action.text,
                 onClick = action.onClick,
                 onLongClick = action.onLongClick,
                 enabled = action.enabled,
-                modifier = if (index == defaultIndex) Modifier.focusRequester(defaultFocusRequester) else Modifier,
+                modifier = Modifier
+                    .focusRequester(requesters[index])
+                    .onFocusChanged { if (it.isFocused) lastFocused = index },
             )
         }
     }
@@ -331,6 +353,7 @@ fun TvScrollableText(text: String, modifier: Modifier = Modifier, color: Color =
                     else -> false
                 }
             }
+            .inertInPreview()
             .focusable(interactionSource = interactionSource)
             .verticalScroll(scrollState)
             .padding(20.dp),
@@ -355,3 +378,13 @@ fun rememberInitialFocus(vararg keys: Any?): FocusRequester {
     }
     return requester
 }
+
+/**
+ * True while a settings page is drawn read-only as the preview of the row that opens it. Nothing
+ * inside can take focus, so the remote never wanders into the preview.
+ */
+val LocalTvPreviewMode = staticCompositionLocalOf { false }
+
+/** Makes a focusable element unfocusable inside a [LocalTvPreviewMode] preview. */
+@Composable
+fun Modifier.inertInPreview(): Modifier = if (LocalTvPreviewMode.current) focusProperties { canFocus = false } else this

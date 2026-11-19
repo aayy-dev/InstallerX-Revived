@@ -169,6 +169,7 @@ private fun TvProfilesContent(viewModel: AllViewModel = koinViewModel()) {
             key = "add",
             title = context.getString(R.string.add),
             icon = AppIcons.Add,
+            drillIn = true,
             onClick = { navigator.push(TvSettingsDest.ProfileEdit(null)) },
         )
 
@@ -194,6 +195,7 @@ private fun TvProfilesContent(viewModel: AllViewModel = koinViewModel()) {
                         }
                     },
                     onLongClick = if (isDefault) null else ({ sheet = ProfileSheet.Actions(config) }),
+                    drillIn = true,
                 )
             }
         }

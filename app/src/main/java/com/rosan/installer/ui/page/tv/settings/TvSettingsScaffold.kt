@@ -3,6 +3,10 @@
 package com.rosan.installer.ui.page.tv.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +30,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +43,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusDirection
@@ -54,6 +60,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
@@ -69,6 +76,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.rosan.installer.R
 import com.rosan.installer.ui.icons.AppIcons
+import com.rosan.installer.ui.page.tv.components.LocalTvPreviewMode
 import com.rosan.installer.ui.page.tv.components.TvAction
 import com.rosan.installer.ui.page.tv.components.TvActionRow
 import com.rosan.installer.ui.page.tv.components.TvKit
@@ -78,6 +86,7 @@ import com.rosan.installer.ui.page.tv.components.TvRow
 import com.rosan.installer.ui.page.tv.components.TvSectionHeader
 import com.rosan.installer.ui.page.tv.components.TvSwitchRow
 import com.rosan.installer.ui.page.tv.components.tvFocusedContainer
+import kotlinx.coroutines.delay
 
 /** One option of a [TvSettingsListScope.choice] row. */
 data class TvChoiceOption(val label: String, val summary: String? = null)
@@ -88,6 +97,8 @@ data class TvPreview(
     val description: String? = null,
     val options: List<TvChoiceOption> = emptyList(),
     val selectedIndex: Int = -1,
+    /** A page this row opens; the pane then shows that page itself, read-only. */
+    val opens: TvSettingsDest? = null,
 )
 
 internal data class OpenTextInput(
@@ -123,7 +134,11 @@ class TvSettingsListScope internal constructor(
         lazy.item(contentType = "header") { TvSectionHeader(text) }
     }
 
-    /** A row that runs [onClick], typically navigating to another page. */
+    /**
+     * A row that runs [onClick], typically navigating to another page. A row that [opens] a page
+     * previews it on the right, and like every row that leads somewhere ([drillIn]) it also opens
+     * with Right, as in the system settings.
+     */
     fun item(
         key: String,
         title: String,
@@ -132,6 +147,8 @@ class TvSettingsListScope internal constructor(
         enabled: Boolean = true,
         description: String? = summary,
         preview: TvPreview? = null,
+        opens: TvSettingsDest? = null,
+        drillIn: Boolean = opens != null,
         trailing: (@Composable (focused: Boolean) -> Unit)? = null,
         onLongClick: (() -> Unit)? = null,
         onClick: () -> Unit,
@@ -142,10 +159,10 @@ class TvSettingsListScope internal constructor(
                 summary = summary.rowSummary(),
                 icon = icon,
                 enabled = enabled,
-                modifier = focusFor(key),
+                modifier = focusFor(key).openOnRight(drillIn && enabled, onClick),
                 onFocused = {
                     onRowFocused(key)
-                    onPreview(preview ?: TvPreview(title, description))
+                    onPreview(preview ?: TvPreview(title, if (opens != null) null else description, opens = opens))
                 },
                 onLongClick = onLongClick,
                 trailing = trailing,
@@ -207,7 +224,9 @@ class TvSettingsListScope internal constructor(
                 summary = summary,
                 icon = icon,
                 enabled = enabled,
-                modifier = focusFor(key),
+                modifier = focusFor(key).openOnRight(enabled) {
+                    onOpenChoice(OpenChoice(title, description, options, selectedIndex, onSelect))
+                },
                 onFocused = {
                     onRowFocused(key)
                     onPreview(TvPreview(title, description, options, selectedIndex))
@@ -265,6 +284,10 @@ fun TvSettingsPage(
     initialFocusKey: String? = null,
     content: TvSettingsListScope.() -> Unit,
 ) {
+    if (LocalTvPreviewMode.current) {
+        TvSettingsPreviewList(content)
+        return
+    }
     var preview by remember { mutableStateOf<TvPreview?>(null) }
     var openChoice by remember { mutableStateOf<OpenChoice?>(null) }
     var openTextInput by remember { mutableStateOf<OpenTextInput?>(null) }
@@ -303,7 +326,23 @@ fun TvSettingsPage(
         if (!restored) runCatching { listFocusRequester.requestFocus() }
     }
 
-    Row(modifier = modifier.fillMaxSize()) {
+    // Left from a row with nothing further left goes back, as in the system settings.
+    val canGoBack = LocalTvSettingsNavigator.current.stack.size > 1
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val focusManager = LocalFocusManager.current
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .onKeyEvent { event ->
+                val isLeft = event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft
+                if (isLeft && canGoBack && backDispatcher != null && !focusManager.moveFocus(FocusDirection.Left)) {
+                    backDispatcher.onBackPressed()
+                    true
+                } else {
+                    false
+                }
+            },
+    ) {
         Column(
             modifier = Modifier
                 .weight(0.48f)
@@ -345,16 +384,76 @@ fun TvSettingsPage(
     }
 }
 
+/** A page drawn read-only in the preview pane: its rows only, dimmed and unfocusable. */
+@Composable
+private fun TvSettingsPreviewList(content: TvSettingsListScope.() -> Unit) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .alpha(0.6f),
+        userScrollEnabled = false,
+        contentPadding = PaddingValues(top = 8.dp, bottom = 48.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        TvSettingsListScope(
+            this,
+            onPreview = {},
+            onOpenChoice = {},
+            onOpenTextInput = {},
+            focusFor = { Modifier },
+            onRowFocused = {},
+        ).content()
+    }
+}
+
+/** Opens the row with Right as well as OK, for rows that lead to another page. */
+private fun Modifier.openOnRight(enabled: Boolean, open: () -> Unit): Modifier = if (!enabled) {
+    this
+} else {
+    onPreviewKeyEvent { event ->
+        if (event.key == Key.DirectionRight) {
+            if (event.type == KeyEventType.KeyDown) open()
+            true
+        } else {
+            false
+        }
+    }
+}
+
 @Composable
 private fun TvPreviewPane(preview: TvPreview?, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)),
     ) {
         if (preview == null) return@Box
+        preview.opens?.let { destination ->
+            Column(Modifier.padding(start = 48.dp, top = 52.dp, end = TvKit.SafeHorizontal - 16.dp)) {
+                Text(
+                    text = preview.title,
+                    modifier = Modifier.padding(start = 16.dp),
+                    fontSize = 34.sp,
+                    lineHeight = 40.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                )
+                Spacer(Modifier.height(16.dp))
+                // Drawn after a short pause, so moving quickly through the list stays smooth.
+                var ready by remember(destination) { mutableStateOf(false) }
+                LaunchedEffect(destination) {
+                    delay(150)
+                    ready = true
+                }
+                AnimatedVisibility(visible = ready, enter = fadeIn(tween(180))) {
+                    CompositionLocalProvider(LocalTvPreviewMode provides true) {
+                        TvSettingsDestination(destination)
+                    }
+                }
+            }
+            return@Box
+        }
         Column(Modifier.padding(start = 64.dp, top = 52.dp, end = TvKit.SafeHorizontal)) {
             Text(
                 text = preview.title,
-                fontSize = 34.sp,
+                fontSize = if (preview.title.none { it == ' ' } && preview.title.length > 22) 26.sp else 34.sp,
                 lineHeight = 40.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
             )
@@ -402,7 +501,19 @@ private fun TvPreviewPane(preview: TvPreview?, modifier: Modifier = Modifier) {
 private fun TvChoicePage(choice: OpenChoice, onDone: () -> Unit) {
     val selectedFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { selectedFocusRequester.requestFocus() } }
-    Row(Modifier.fillMaxSize()) {
+    Row(
+        Modifier
+            .fillMaxSize()
+            .onKeyEvent { event ->
+                // Left steps back out, the mirror of Right opening it.
+                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
+                    onDone()
+                    true
+                } else {
+                    false
+                }
+            },
+    ) {
         Column(
             Modifier
                 .weight(0.48f)
